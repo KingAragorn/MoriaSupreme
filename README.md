@@ -1,1 +1,110 @@
-# MoriaSupreme
+# Moria Supreme
+
+Moria Supreme is a free, non-commercial hobby roguelike: the ultimate classic Moria. It is one town and a dive to the Balrog on dungeon level 50, with the races and classes gathered from the Moria family. It is not an Angband-length game.
+
+The playable base is [PmoriaPlus](https://github.com/KingAragorn/PmoriaPlus) current `main`: Pmoria 0.98, Christopher J. Petit's modification of Umoria 5.5, with a modern CMake/ncurses build, terminal color, and the macOS AppleClang fixes. This game will not be sold.
+
+## License
+
+The imported source keeps the Wilson/Koeneke notice:
+
+> Copyright (c) 1989-92 James E. Wilson, Robert A. Koeneke
+>
+> This software may be copied and distributed for educational, research, and not for profit purposes provided that this copyright and statement are included in all such copies.
+
+`source/main.c` also keeps Koeneke's dedication, including the condition that nobody may sell or market the software without his written consent. Moria Supreme is not relicensed. Do not put it under the GPL, and do not drop these notices.
+
+Imoria, Omega, BOSS, and other variants were not copied. Races, classes, and rules added from those games are clean-room: original code and original text, written from public descriptions of how the games play. Provenance for each addition is in [docs/VARIANTS.md](docs/VARIANTS.md) and [docs/CREDITS.md](docs/CREDITS.md).
+
+## Races and classes
+
+Pmoria's races and classes are all still here, including Avion, Sage Elf, Spectre, Demigod, Sage, Jester, Ninja, Healer, Wizard, and Monk.
+
+Umoria's Gnome is restored beside the Spectre. Pmoria had used the Spectre's slot for that race. Gnome keeps the stat line published in the Umoria manual. Ages, size, and the raw skill numbers are original values fitted to that table.
+
+Clean-room additions:
+
+| Kind | Name | Idea |
+| --- | --- | --- |
+| Race | Dryad | Wood spirit. Extra charisma and wisdom. Best as a druid. |
+| Class | Druid | Prayers leaned toward healing and the wild. Will not wear metal armor. |
+| Class | Bard | Mage spells learned as songs. Charm and lore before fire. Light armor. |
+| Class | Adventurer | A bit of fighting, stealth, and a few mage spells. Slow to level. |
+
+Which older classes each older race may take is unchanged, except that Humans, Half-Elves, and the races that fit a new profession may also take Druid, Bard, or Adventurer. The full grid is in `docs/VARIANTS.md`.
+
+Save files are still the Pmoria 0.9 layout. Race and class are stored as indexes, and the new ones are appended, so an old save still names the same race and class. New games write `$HOME/moriasupreme.save`. Scores go to `$HOME/.moriasupreme/scores`.
+
+## Not in this build yet
+
+Guilds, priesthoods, and quests are the next phase. The sketch, kept to one town, is in `docs/VARIANTS.md`. So are Imoria's bank and separate coin metals, bard instruments, and a second spellbook for the MacMoria reading of the druid. Day and night in town is already the classic Pmoria cycle: at night the streets are darker and more people are out.
+
+## Build
+
+You need a C compiler, CMake 3.10 or newer, and ncurses development headers.
+
+Debian or Ubuntu:
+
+```sh
+sudo apt install build-essential cmake libncurses-dev
+```
+
+macOS (Homebrew):
+
+```sh
+brew install cmake ncurses
+```
+
+Then:
+
+```sh
+cmake -S . -B build
+cmake --build build
+./build/moriasupreme
+```
+
+The binary looks for `files/hours`, the news file, and the help files in this order:
+
+1. `$MORIA_LIB`, if that directory contains `hours`
+2. the `files/` directory in this source tree
+3. `../share/moriasupreme` next to the executable
+4. the install prefix data directory (`share/moriasupreme`)
+
+Install with:
+
+```sh
+cmake --install build
+```
+
+## Terminal color
+
+The dungeon map is drawn in color when the terminal supports it. The character sheet and messages stay in the terminal's normal text.
+
+Color is off when the terminal has no color, you pass `-m`, or `MORIA_MONOCHROME` is set to anything other than `0`.
+
+```sh
+./build/moriasupreme -m
+MORIA_MONOCHROME=1 ./build/moriasupreme
+```
+
+Other startup flags are the original ones: `-n` ignores a save file, `-o` and `-r` choose the original or rogue-like key sets, `-s` and `-S` show scores, and `-w` requests wizard mode.
+
+On macOS, if CMake does not find Homebrew's ncurses, configure with `CMAKE_PREFIX_PATH` set to the Homebrew prefix (`/opt/homebrew` or `/usr/local`). The AppleClang `lseek` and `flock` fixes in `source/death.c` are kept.
+
+## Smoke test
+
+`scripts/smoke_characters.py` creates every legal race and class, walks a few steps in town, and saves:
+
+```sh
+python3 scripts/smoke_characters.py --binary build/moriasupreme
+```
+
+It needs the Python package `pyte`.
+
+## Provenance of the import
+
+PmoriaPlus `main` at `03a6172709909a157dbce10cdfc6ad6596d002d7` is merged into this history. That tree's first commit is the unpacked `pmoria.tar.Z` from the Funet unofficial Moria source mirror (8 April 1993):
+
+https://ftp.zx.net.nz/pub/mirror/ftp.funet.fi/pub/unix/games/moria/unofficial/source/pmoria.tar.Z
+
+Petit's notes are in `pmoria.mod`.
