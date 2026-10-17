@@ -19,9 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mymindstorm/setup-emsdk@v14
+      - uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
         with:
+          # The compiler Pages failed with: emscripten 3.1.74, emsdk release
+          # c2655005234810c7c42e02a18e4696554abe0352, emcc 1092ec30a3fb.
+          # Do not float this. wasm-ld in this release drops -fcommon symbols.
           version: 3.1.74
+      - name: Require the pinned compiler
+        run: emcc --version | head -1 | grep -F '3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5)'
       - name: Build the static site
         run: ./web/build.sh
       - uses: actions/upload-pages-artifact@v3

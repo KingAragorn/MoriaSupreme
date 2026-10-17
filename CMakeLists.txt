@@ -70,6 +70,9 @@ if(EMSCRIPTEN)
   # wasm32 time_t is long long. The K&R sources pass long* where a POSIX
   # prototype now says time_t*. NULL and the values are unchanged.
   target_compile_options(moriasupreme PRIVATE -Wno-incompatible-pointer-types)
+  # wasm-ld does not keep COMMON symbols. -fcommon makes the tentative
+  # globals in variable.c, player.c, and monsters.c disappear, and the
+  # link then reports them undefined. -fno-common is applied below.
   set_target_properties(moriasupreme PROPERTIES
     LINK_FLAGS "-sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -sSTACK_SIZE=1048576 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 -sFORCE_FILESYSTEM=1 -sINVOKE_RUN=0 -sEXIT_RUNTIME=1 -sEXPORTED_FUNCTIONS=_main,_moria_push_key -sEXPORTED_RUNTIME_METHODS=FS,callMain,ccall -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/files@/files"
   )
@@ -88,9 +91,16 @@ else()
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  # Native ld merges tentative definitions. wasm-ld does not, so the
+  # browser build needs real definitions instead.
+  if(EMSCRIPTEN)
+    set(MORIA_COMMON_FLAG -fno-common)
+  else()
+    set(MORIA_COMMON_FLAG -fcommon)
+  endif()
   target_compile_options(moriasupreme PRIVATE
     -std=gnu17
-    -fcommon
+    ${MORIA_COMMON_FLAG}
     -Wall
     -Wno-unknown-warning-option
     -Wno-unused-parameter
