@@ -66,6 +66,8 @@ static void rd_item(inven_type *);
 static void rd_monster(monster_type *);
 static void wr_town_life(void);
 static void rd_town_life(void);
+static void wr_patch2(void);
+static int rd_patch2(void);
 #else
 static int sv_write();
 static void wr_byte();
@@ -86,6 +88,8 @@ static void rd_item();
 static void rd_monster();
 static void wr_town_life();
 static void rd_town_life();
+static void wr_patch2();
+static int rd_patch2();
 #endif
 
 #ifndef MORIA_POSIX
@@ -328,9 +332,10 @@ static int sv_write()
   /* starting with 5.2.2, put the birth_date in the savefile */
   wr_long ((int32u) birth_date);
 
-  /* Patch 1 trailer. Patch 0 readers stop at birth_date, so this is
-     appended and never inserted into the prefix. */
+  /* Patch 1 trailer, then the patch 2 trailer. Older readers stop at
+     birth_date, so both are appended and never inserted into the prefix. */
   wr_town_life();
+  wr_patch2();
 
   /* only level specific info follows, this allows characters to be
      resurrected, the dungeon level info is not needed for a resurrection */
@@ -870,6 +875,12 @@ int *generate;
       if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
 	  && patch_level >= 1)
 	rd_town_life();
+      if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
+	  && patch_level >= 2)
+	{
+	  if (!rd_patch2())
+	    goto error;
+	}
       if ((c = getc(fileptr)) == EOF || (l & 0x80000000L))
 	{
 	  if ((l & 0x80000000L) == 0)
@@ -1170,6 +1181,40 @@ static void rd_town_life()
     town_patron = PATRON_NONE;
   if (bank_gold < 0)
     bank_gold = 0;
+}
+
+/* Temperament, then a locker count and that many item records.
+   A missing trailer is Ordinary and an empty locker, which town_clear
+   already set. */
+static void wr_patch2()
+{
+  int i;
+
+  wr_byte(personality);
+  wr_byte(locker_ctr);
+  for (i = 0; i < (int)locker_ctr; i++)
+    wr_item(&locker[i]);
+}
+
+static int rd_patch2()
+{
+  int i;
+  int8u n;
+
+  rd_byte(&personality);
+  if (personality >= MAX_PERSONALITY)
+    personality = PERS_ORDINARY;
+  rd_byte(&n);
+  if (n > LOCKER_SLOTS)
+    return FALSE;
+  locker_ctr = n;
+  for (i = 0; i < (int)n; i++)
+    {
+      rd_item(&locker[i]);
+      if (locker[i].index >= MAX_OBJECTS || locker[i].tval == TV_NOTHING)
+	return FALSE;
+    }
+  return TRUE;
 }
 
 static void wr_long(l)

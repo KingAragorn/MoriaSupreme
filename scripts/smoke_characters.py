@@ -241,6 +241,9 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
         if not session.wait_for("Choose a class"):
             return False, "class prompt missing", session
         session.send(class_key)
+        if not session.wait_for("temperament"):
+            return False, "temperament prompt missing", session
+        session.send("a")
         if not session.wait_for("player's name"):
             return False, "name prompt missing", session
         session.send("\r")

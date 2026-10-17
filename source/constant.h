@@ -31,9 +31,10 @@ some of the system defines set up there.
 #define CUR_VERSION_MAJ 0 /* version 0.9 */
 #define CUR_VERSION_MIN 9
 /* Patch 1 appends a trailer after birth_date (patron, bank, second spell
-   mask, two town jobs). The bytes before that trailer are the patch 0
-   layout, and a patch 0 save still loads. */
-#define PATCH_LEVEL 1
+   mask, two town jobs). Patch 2 appends a temperament byte and a bank
+   locker after that. The bytes before each trailer stay put, and a
+   patch 0 or patch 1 save still loads. */
+#define PATCH_LEVEL 2
 
 #ifndef TRUE
 #define TRUE 1
@@ -96,7 +97,7 @@ some of the system defines set up there.
 /* Note that the following constants are all related, if you change one,
    you must also change all succeeding ones.  Also, player_init[] and
    store_choice[] may also have to be changed. */
-#define MAX_OBJECTS    439    /* Number of objects for universe	       */
+#define MAX_OBJECTS    440    /* Number of objects for universe	       */
 #define MAX_DUNGEON_OBJ 351   /* Number of dungeon objects */
 #define OBJ_OPEN_DOOR	374
 #define OBJ_CLOSED_DOOR 375
@@ -126,6 +127,7 @@ some of the system defines set up there.
 #define OBJ_GOLD_BAR    436
 #define OBJ_MITHRIL_BAR 437
 #define OBJ_GROVE_BOOK  438
+#define OBJ_LOAF        439
 #define GROVE_BOOK_SUBVAL 80
 #define OBJECT_IDENT_SIZE 448 /* 7*64, see object_offset() in desc.c,
 				 could be MAX_OBJECTS o_o() rewritten  */
@@ -232,7 +234,25 @@ some of the system defines set up there.
 #define QUEST_NONE		0
 #define QUEST_KILL		1
 #define QUEST_FETCH		2
+#define QUEST_WANTED		3
 #define TOWN_QUESTS		2
+
+/* Temperament chosen at birth. One byte in the patch 2 trailer.
+   0 is Ordinary, which is what a patch 0 or patch 1 save loads as. */
+#define PERS_ORDINARY		0
+#define PERS_MIGHTY		1
+#define PERS_SHREWD		2
+#define PERS_NIMBLE		3
+#define PERS_PIOUS		4
+#define PERS_PATIENT		5
+#define MAX_PERSONALITY		6
+
+/* Bank locker. A count and that many item records follow the temperament
+   byte. Older saves have a count of zero. */
+#define LOCKER_SLOTS		12
+
+/* Pmoria put the Spectre in the old Gnome slot. The id stays 4. */
+#define RACE_SPECTRE		4
 
 
 #define USE_DEVICE	  3   /* x> Harder devices x< Easier devices   */

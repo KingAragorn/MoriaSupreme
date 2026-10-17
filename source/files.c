@@ -325,8 +325,10 @@ char *filename1;
 		       (int32)(player_exp[py.misc.lev-1]
 			       * py.misc.expfact / 100));
       (void) fprintf(file1, "    Cur Mana%8s %6d\n", colon, py.misc.cmana);
-      (void) fprintf(file1, "%29sGold%8s %6ld\n\n", blank, colon,
+      (void) fprintf(file1, "%29sGold%8s %6ld\n", blank, colon,
 		     py.misc.au);
+      (void) fprintf(file1, " Temperament : %s\n\n",
+		     personality_name((int)personality));
 
       p_ptr = &py.misc;
       xbth = p_ptr->bth + p_ptr->ptohit * BTH_PLUS_ADJ

@@ -2,7 +2,7 @@
 
 Hengband is the long Japanese branch of Zangband: many races and classes, a personality on top of race and class, pets, town buildings, and a wilderness of towns and side dungeons that ends on the Serpent of Chaos. That is an Angband-length game. Moria Supreme is still one town and a dive to the Balrog on level 50.
 
-This note is a shopping list, not a plan to build. Nothing here is implemented. No Hengband source was opened. No tables, spell lists, personality modifiers, monster names, or item text were copied. If any of these ideas is built later, the numbers and the wording are written for this game.
+The first five choices below, and the four small extras under them, are in the game. The rest of this note stays a shopping list. No Hengband source was opened. No tables, spell lists, personality modifiers, monster names, or item text were copied. The numbers and the wording in the binary are original to this game.
 
 ## What the public descriptions say
 
@@ -22,11 +22,13 @@ Effort is the size of the change, not a schedule.
 - **Medium.** A new choice at birth, or a new counter in the town, plus a short field on the save.
 - **Large.** The equipment layout or a follower that has to survive saves. Easy to get wrong.
 
-Saves today are version 0.9. Patch 0 has no town trailer and still loads. Patch 1 appends the patron, the bank balance, the druid's second spell list, and two notice-board jobs. Anything new that must be remembered goes in a patch 2 trailer after that. Older saves load with the new field empty. Race and class numbers do not move.
+Saves are version 0.9. Patch 0 has no town trailer and still loads. Patch 1 appends the patron, the bank balance, the druid's second spell list, and two notice-board jobs. Patch 2, now written by this binary, appends a temperament byte and a bank locker after that. A patch 0 or patch 1 save loads as Ordinary with an empty locker. Race and class numbers do not move.
 
 ## Worth doing
 
 ### Personality at birth
+
+**Done.** Birth asks for a temperament. The stat change is applied once, into the rolled stats, so a load does not apply it again. The byte in the patch 2 trailer is the label for the habits that are recomputed (devices, prayers, to-hit, food, rest).
 
 Hengband's distinctive extra choice. After race and class you pick a temperament. It nudges two stats and one habit. It is not a new class and it does not add a spell book.
 
@@ -38,6 +40,8 @@ A short original set is enough: Ordinary (no change), Mighty (stronger, clumsier
 
 ### Wanted notices
 
+**Done.** Slot 0 on the existing board is a wanted notice about half the time, otherwise the old kill job. Slot 1 stays a fetch. The target is a creature already in the monster list. Pay is 250 gold and 80 experience. Stairs stay open. The kind byte was already in the patch 1 quest record.
+
 The hunter's office pays for a named kind of monster. This town already has a notice board and two jobs (`QUEST_KILL` and `QUEST_FETCH`). A bounty is the kill job aimed at a creature that is already in the monster list, paid in gold at the board, and never required before the stairs.
 
 **Effort.** Small if a bounty is one of the two jobs the board already stores. Medium if a bounty sits beside both jobs at once.
@@ -45,6 +49,8 @@ The hunter's office pays for a named kind of monster. This town already has a no
 **Saves.** None, if it uses one of the two quest records already in the patch 1 trailer (kind, target, need, have, done). A third job at the same time is another quest record and needs patch 2. Old saves keep the two jobs they have.
 
 ### A feeling for unknown items
+
+**Done.** A weapon or armor the character already holds, and has not identified, is named average, good, or bad from its to-hit, to-damage, to-armor, and curse flag. The word is computed when the name is shown. It is not stored.
 
 Warriors in this game cannot cast identify, and a short dive does not hand out many scrolls. Hengband (like other Angband-family games) lets you sense an unknown weapon or armor: average, good, or bad, without naming the enchantment. Full identify still comes from scrolls and spells.
 
@@ -54,6 +60,8 @@ Warriors in this game cannot cast identify, and a short dive does not hand out m
 
 ### A locker at the bank
 
+**Done.** The bank command `l` holds 12 piles. No haggling and no identify. The patch 2 trailer stores a count and that many item records. Older saves have a count of zero. The worn-equipment array did not grow.
+
 Hengband's home holds a character's spare gear in town. This game has a bank and no cupboard, so every spare sword rides in the pack. A locker of about a dozen items, in the bank, with no haggling and no fee beyond the deposit fee the bank already charges for gold, is the whole feature. It is not a second shop and it does not identify what you leave there.
 
 **Effort.** Medium. A small screen to put an item in and take it out, and a fixed array, not a growing pack.
@@ -61,6 +69,8 @@ Hengband's home holds a character's spare gear in town. This game has a bank and
 **Saves.** The items have to be in the save or they disappear. Patch 2 appends a count and that many item records after the patch 1 trailer. Older saves have a count of zero. The worn-equipment array does not grow.
 
 ### An armor reading at the hall
+
+**Done.** Hall command `a` shows the race's base armor, each worn piece, and the sheet total. An enchantment that is not yet known is labeled unread.
 
 One of Hengband's town services tells you what your armor is actually doing. The hall can do the same in one screen: base armor, what each worn piece adds, and the total. No new item and no new stat.
 
@@ -72,6 +82,8 @@ One of Hengband's town services tells you what your armor is actually doing. The
 
 ### Mark junk, then destroy it
 
+**Done.** Inscribe an item `junk`. `}` destroys every pack item with that word. Equipped items are left alone.
+
 The Mogaminator is a rules editor for what to pick up and what to throw away. The part that fits here is the mark. Inscriptions are already stored on each item. A single agreed word, or the existing inscription command, means "this is junk," and one command destroys every marked item in the pack. No rule language, no editor, no auto-destroy of things you have not marked.
 
 **Effort.** Small.
@@ -79,6 +91,8 @@ The Mogaminator is a rules editor for what to pick up and what to throw away. Th
 **Saves.** None. The inscription is already part of the item record.
 
 ### The Spectre spends a charge
+
+**Done.** `]` spends one wand charge. Half the time it is a little food (1200), otherwise a little mana. The spell is not learned. Other races are refused.
 
 Hengband lets some undead races eat the charges in a wand or staff. This game already has a Spectre. One original use: spend a charge from a wand you are holding and gain a little food or a little mana. It does not learn the wand's spell and it does not work for any other race.
 
@@ -88,6 +102,8 @@ Hengband lets some undead races eat the charges in a wand or staff. This game al
 
 ### Ask before the stairs when you are nearly dead
 
+**Done.** Under a fifth of maximum hit points, `<` and `>` ask first. No stays put and does not spend the turn.
+
 Hengband added warnings around stairs and one-way quest levels. This dungeon has ordinary stairs. The useful scrap is a question when you step on `>` or `<` at very low hit points. Yes goes through. Anything else stays put.
 
 **Effort.** Small.
@@ -95,6 +111,8 @@ Hengband added warnings around stairs and one-way quest levels. This dungeon has
 **Saves.** None.
 
 ### One more loaf at the general store
+
+**Done.** Object 439 is a travel loaf (food 9000, cost 8, weight 20, its own subval). One general-store slot that was a second ration now offers it.
 
 The public notes add a travel food to the general store. Here that is one new ration, sold beside the food that is already there, filling more hunger than a ration and costing more. It is not a new shop.
 
@@ -145,7 +163,9 @@ These are the parts that make Hengband a long game. They stay out.
 - The full auto-picker, with a rule editor and destroy-on-identify.
 - A museum, a second map, or auto-explore that walks the level for you.
 
-## First choices, if one of these is built
+## First choices
+
+These five, and the four small extras, are in the binary.
 
 1. **Personality.** The idea that is actually Hengband's, and it fits birth without a new class.
 2. **Wanted notices** on the board that is already there.
@@ -153,4 +173,4 @@ These are the parts that make Hengband a long game. They stay out.
 4. **The bank locker**, so the pack is for the dive and the town holds the spare.
 5. **The armor reading**, because it is a screen of numbers the game already has.
 
-The junk mark, the Spectre's charge, the stair question, and the extra loaf can ride along with any of those. They do not need a save bump.
+The junk mark, the Spectre's charge, and the stair question did not need a save bump. The loaf is an appended object, the same way the grove book was. The temperament and the locker are the patch 2 trailer.

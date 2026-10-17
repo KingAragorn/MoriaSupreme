@@ -307,6 +307,44 @@ inven_type *i_ptr;
 /* pref indicates that there should be an article added (prefix) */
 /* note that since out_val can easily exceed 80 characters, objdes must
    always be called with a bigvtype as the first paramter */
+/* A feeling for a weapon or armor the character already holds.
+   Recomputed from the item, so it is not stored. */
+static char *item_feeling(i_ptr)
+register inven_type *i_ptr;
+{
+  int score, held;
+
+  held = (i_ptr >= &inventory[0] && i_ptr < &inventory[INVEN_ARRAY_SIZE])
+    || (i_ptr >= &locker[0] && i_ptr < &locker[LOCKER_SLOTS]);
+  if (!held)
+    return CNIL;
+  switch (i_ptr->tval)
+    {
+    case TV_HAFTED:
+    case TV_POLEARM:
+    case TV_SWORD:
+    case TV_BOW:
+    case TV_BOOTS:
+    case TV_GLOVES:
+    case TV_CLOAK:
+    case TV_HELM:
+    case TV_SHIELD:
+    case TV_HARD_ARMOR:
+    case TV_SOFT_ARMOR:
+      break;
+    default:
+      return CNIL;
+    }
+  if (TR_CURSED & i_ptr->flags)
+    return "bad";
+  score = (int)i_ptr->tohit + (int)i_ptr->todam + (int)i_ptr->toac;
+  if (score > 0)
+    return "good";
+  if (score < 0)
+    return "bad";
+  return "average";
+}
+
 void objdes(out_val, i_ptr, pref)
 char *out_val;
 register inven_type *i_ptr;
@@ -654,6 +692,11 @@ int pref;
 	(void) strcpy(out_val, tmp_val);
 
       tmp_str[0] = '\0';
+      if (!known2_p(i_ptr) && item_feeling(i_ptr) != CNIL)
+	{
+	  (void) strcat(tmp_str, item_feeling(i_ptr));
+	  (void) strcat(tmp_str, " ");
+	}
       if ((indexx = object_offset(i_ptr)) >= 0)
 	{
 	  indexx = (indexx <<= 6) +

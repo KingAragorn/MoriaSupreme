@@ -19,6 +19,9 @@ int32 bank_gold = 0;
 int32u spell_learned2 = 0;
 int32u spell_worked2 = 0;
 town_quest_type town_quests[TOWN_QUESTS];
+int8u personality = PERS_ORDINARY;
+int8u locker_ctr = 0;
+inven_type locker[LOCKER_SLOTS];
 
 static spell_type druid_arcane[8] = {
   { 1, 1, 30,  1},
@@ -57,6 +60,19 @@ static char *rumors[10] = {
   "The grove book is kept at the hall, not in the magic shop.",
   "Some professions see a door where others see only stone.",
   "The bank will hold coin a pack cannot, and it keeps a fee."
+};
+
+static char *pers_names[MAX_PERSONALITY] = {
+  "Ordinary", "Mighty", "Shrewd", "Nimble", "Pious", "Patient"
+};
+
+static char *wanted_names[6] = {
+  "Orc Warrior",
+  "Orc Shaman",
+  "Skeleton Human",
+  "Large Grey Snake",
+  "Giant Black Centipede",
+  "Jackal"
 };
 
 static char *patron_name[5] = {
@@ -103,6 +119,10 @@ void town_clear()
   bank_gold = 0;
   spell_learned2 = 0;
   spell_worked2 = 0;
+  personality = PERS_ORDINARY;
+  locker_ctr = 0;
+  for (i = 0; i < LOCKER_SLOTS; i++)
+    invcopy(&locker[i], OBJ_NOTHING);
   for (i = 0; i < TOWN_QUESTS; i++)
     {
       town_quests[i].kind = QUEST_NONE;
@@ -290,6 +310,57 @@ static void buy_book()
   (void) give_paid(which, price);
 }
 
+char *personality_name(which)
+int which;
+{
+  if (which < 0 || which >= MAX_PERSONALITY)
+    return pers_names[PERS_ORDINARY];
+  return pers_names[which];
+}
+
+static void hall_armor()
+{
+  int i, row;
+  vtype line;
+  bigvtype name;
+  register inven_type *i_ptr;
+
+  clear_screen();
+  prt("An armor reading", 1, 28);
+  (void) sprintf(line, "Your body, before any gear, is armor %d.",
+		 (int)race[py.misc.prace].base_ac);
+  prt(line, 3, 4);
+  row = 5;
+  for (i = INVEN_WIELD; i < INVEN_LIGHT; i++)
+    {
+      i_ptr = &inventory[i];
+      if (i_ptr->tval == TV_NOTHING)
+	continue;
+      if (i_ptr->ac == 0 && i_ptr->toac == 0)
+	continue;
+      objdes(name, i_ptr, FALSE);
+      if ((int)strlen(name) > 36)
+	name[36] = '\0';
+      if (known2_p(i_ptr))
+	(void) sprintf(line, "%s   base %d, %c%d more",
+		       name, (int)i_ptr->ac,
+		       (i_ptr->toac < 0) ? '-' : '+', abs((int)i_ptr->toac));
+      else
+	(void) sprintf(line, "%s   base %d, enchantment unread",
+		       name, (int)i_ptr->ac);
+      prt(line, row, 4);
+      row++;
+      if (row > 18)
+	break;
+    }
+  if (row == 5)
+    prt("Nothing you are wearing adds armor.", 5, 4);
+  (void) sprintf(line, "The sheet's total is %d.", (int)py.misc.dis_ac);
+  prt(line, 20, 4);
+  prt("[Press any key.]", 21, 4);
+  (void) inkey();
+}
+
 static void hall_screen()
 {
   vtype out;
@@ -302,7 +373,8 @@ static void hall_screen()
 		 is_a_vowel(title[0]) ? "an" : "a", title);
   prt(out, 4, 20);
   prt("i) identify one item     r) hear a rumor", 6, 20);
-  prt("b) replace a lost book   e) leave", 7, 20);
+  prt("b) replace a lost book   a) read your armor", 7, 20);
+  prt("e) leave", 8, 20);
 }
 
 void town_enter_hall()
@@ -341,6 +413,11 @@ void town_enter_hall()
 	  buy_book();
 	  hall_screen();
 	}
+      else if (com == 'a' || com == 'A')
+	{
+	  hall_armor();
+	  hall_screen();
+	}
       else
 	bell();
     }
@@ -362,8 +439,9 @@ static void bank_screen()
   prt("w) withdraw          c) buy a copper bar (50)", 8, 12);
   prt("s) buy a silver bar (200)   g) buy a gold bar (1000)", 9, 12);
   prt("m) buy a mithril bar (5000)", 10, 12);
-  prt("C/S/G/M) cash one bar of that metal   e) leave", 11, 12);
-  prt("Bars are bought at a tenth over face, cashed at a tenth under.", 13, 12);
+  prt("C/S/G/M) cash one bar of that metal", 11, 12);
+  prt("l) open the locker          e) leave", 12, 12);
+  prt("Bars are bought at a tenth over face, cashed at a tenth under.", 14, 12);
 }
 
 static int read_amount()
@@ -400,6 +478,125 @@ int obj;
       }
   msg_print("You are not carrying that bar.");
   return FALSE;
+}
+
+static void locker_remove(slot)
+int slot;
+{
+  int j;
+
+  for (j = slot; j < (int)locker_ctr - 1; j++)
+    locker[j] = locker[j + 1];
+  locker_ctr--;
+  invcopy(&locker[locker_ctr], OBJ_NOTHING);
+}
+
+static void locker_screen()
+{
+  int i, row;
+  vtype line;
+  bigvtype name;
+
+  clear_screen();
+  prt("The locker", 1, 32);
+  (void) sprintf(line, "It holds %d of %d piles. No fee, and nothing is identified.",
+		 (int)locker_ctr, LOCKER_SLOTS);
+  prt(line, 3, 4);
+  row = 5;
+  for (i = 0; i < (int)locker_ctr; i++)
+    {
+      objdes(name, &locker[i], TRUE);
+      if ((int)strlen(name) > 60)
+	name[60] = '\0';
+      (void) sprintf(line, "%c) %s", 'a' + i, name);
+      prt(line, row, 4);
+      row++;
+    }
+  if (locker_ctr == 0)
+    prt("The locker is empty.", 5, 4);
+  prt("d) leave one item from your pack    w) take one back    e) back", 20, 4);
+}
+
+static void locker_deposit()
+{
+  int item;
+  inven_type copy;
+
+  if (locker_ctr >= LOCKER_SLOTS)
+    {
+      msg_print("The locker has no empty hook.");
+      return;
+    }
+  if (inven_ctr < 1)
+    {
+      msg_print("Your pack is empty.");
+      return;
+    }
+  if (!get_item(&item, "Leave which item?", 0, inven_ctr - 1, CNIL, CNIL))
+    return;
+  copy = inventory[item];
+  if (copy.number > 1 && copy.subval <= ITEM_SINGLE_STACK_MAX)
+    copy.number = 1;
+  locker[locker_ctr] = copy;
+  locker_ctr++;
+  inven_destroy(item);
+  msg_print("The locker takes it. It is not identified.");
+}
+
+static void locker_withdraw()
+{
+  char com;
+  int slot;
+
+  if (locker_ctr < 1)
+    {
+      msg_print("The locker is empty.");
+      return;
+    }
+  if (!get_com("Take which item?", &com))
+    return;
+  slot = com - 'a';
+  if (slot < 0 || slot >= (int)locker_ctr)
+    {
+      bell();
+      return;
+    }
+  if (!inven_check_num(&locker[slot]))
+    {
+      msg_print("Your pack has no room for that.");
+      return;
+    }
+  (void) inven_carry(&locker[slot]);
+  locker_remove(slot);
+  py.flags.status |= PY_STR_WGT;
+  msg_print("You take it back.");
+}
+
+static void locker_use()
+{
+  int exit_flag;
+  char com;
+
+  exit_flag = FALSE;
+  locker_screen();
+  do
+    {
+      if (!get_com("Locker?", &com) || leaving(com))
+	exit_flag = TRUE;
+      else if (com == 'd')
+	{
+	  locker_deposit();
+	  locker_screen();
+	}
+      else if (com == 'w')
+	{
+	  locker_withdraw();
+	  locker_screen();
+	}
+      else
+	bell();
+    }
+  while (!exit_flag);
 }
 
 void town_enter_bank()
@@ -474,10 +671,13 @@ void town_enter_bank()
 	(void) cash_one(OBJ_GOLD_BAR);
       else if (com == 'M')
 	(void) cash_one(OBJ_MITHRIL_BAR);
+      else if (com == 'l')
+	locker_use();
       else
 	bell();
       if (!exit_flag && (com == 'c' || com == 's' || com == 'g' || com == 'm'
-			 || com == 'C' || com == 'S' || com == 'G' || com == 'M'))
+			 || com == 'C' || com == 'S' || com == 'G' || com == 'M'
+			 || com == 'l'))
 	bank_screen();
     }
   while (!exit_flag);
@@ -554,7 +754,7 @@ int index, need;
 static int quest_sane(q)
 town_quest_type *q;
 {
-  if (q->kind == QUEST_KILL)
+  if (q->kind == QUEST_KILL || q->kind == QUEST_WANTED)
     return (q->target >= 0 && q->target < MAX_CREATURES
 	    && c_list[q->target].name != CNIL && q->need > 0);
   if (q->kind == QUEST_FETCH)
@@ -583,6 +783,28 @@ int slot;
     }
 }
 
+static void post_wanted(slot)
+int slot;
+{
+  int guard, id, k;
+
+  for (guard = 0; guard < 12; guard++)
+    {
+      k = randint(6) - 1;
+      id = creature_by_name(wanted_names[k]);
+      if (id >= 0)
+	{
+	  town_quests[slot].kind = QUEST_WANTED;
+	  town_quests[slot].target = id;
+	  town_quests[slot].need = 1;
+	  town_quests[slot].have = 0;
+	  town_quests[slot].done = 0;
+	  return;
+	}
+    }
+  post_kill(slot);
+}
+
 static void post_fetch(slot)
 int slot;
 {
@@ -604,7 +826,12 @@ static void fill_quests()
     if (!quest_sane(&town_quests[i]))
       town_quests[i].kind = QUEST_NONE;
   if (town_quests[0].kind == QUEST_NONE)
-    post_kill(0);
+    {
+      if (randint(2) == 1)
+	post_wanted(0);
+      else
+	post_kill(0);
+    }
   if (town_quests[1].kind == QUEST_NONE)
     post_fetch(1);
 }
@@ -619,6 +846,9 @@ char letter;
   if (q->kind == QUEST_KILL)
     (void) sprintf(buf, "%c) Kill %d %s. %d down.",
 		   letter, (int)q->need, c_list[q->target].name, (int)q->have);
+  else if (q->kind == QUEST_WANTED)
+    (void) sprintf(buf, "%c) Wanted: one %s. %d down.",
+		   letter, c_list[q->target].name, (int)q->have);
   else if (q->kind == QUEST_FETCH)
     {
       plain_name(name, object_list[q->target].name);
@@ -653,10 +883,18 @@ town_quest_type *q;
   int32 gold;
   vtype out;
 
-  gold = (int32)q->need * 40 + 50;
+  if (q->kind == QUEST_WANTED)
+    {
+      gold = 250;
+      py.misc.exp += 80;
+    }
+  else
+    {
+      gold = (int32)q->need * 40 + 50;
+      py.misc.exp += (int32)q->need * 15;
+    }
   py.misc.au += gold;
   prt_gold();
-  py.misc.exp += (int32)q->need * 15;
   (void) sprintf(out, "The board pays you %ld gold.", (long)gold);
   msg_print(out);
   prt_experience();
@@ -691,7 +929,7 @@ static void board_screen()
   refresh_fetch();
   clear_screen();
   prt("The notice board", 2, 24);
-  prt("Two jobs are posted. Finishing one does not block the stairs.", 4, 8);
+  prt("Two jobs are posted. A wanted notice pays more. Stairs stay open.", 4, 4);
   quest_line(line, &town_quests[0], 'a');
   prt(line, 6, 8);
   quest_line(line, &town_quests[1], 'b');
@@ -740,7 +978,8 @@ int mon;
   for (i = 0; i < TOWN_QUESTS; i++)
     {
       q = &town_quests[i];
-      if (q->kind == QUEST_KILL && q->target == mon && q->have < q->need)
+      if ((q->kind == QUEST_KILL || q->kind == QUEST_WANTED)
+	  && q->target == mon && q->have < q->need)
 	{
 	  q->have++;
 	  if (q->have >= q->need)

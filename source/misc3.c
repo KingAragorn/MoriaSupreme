@@ -931,12 +931,14 @@ void put_character()
   put_buffer ("Race        :", 3, 1);
   put_buffer ("Sex         :", 4, 1);
   put_buffer ("Class       :", 5, 1);
+  put_buffer ("Temperament :", 6, 1);
   if (character_generated)
     {
       put_buffer (m_ptr->name, 2, 15);
       put_buffer (race[m_ptr->prace].trace, 3, 15);
       put_buffer ((m_ptr->male ? "Male" : "Female"), 4, 15);
       put_buffer (class[m_ptr->pclass].title, 5, 15);
+      put_buffer (personality_name((int)personality), 6, 15);
     }
 }
 
@@ -1410,6 +1412,8 @@ int spell;
    chance += too_bulky();
   if (py.misc.pclass == CLASS_BARD)
     chance += town_bard_fail();
+  if (personality == PERS_PIOUS && class[py.misc.pclass].spell == PRIEST)
+    chance -= 8;
   if (chance > 95)
     chance = 95;
   else if (chance < 5)
