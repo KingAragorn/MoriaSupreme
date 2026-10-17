@@ -52,6 +52,8 @@ void aim()
 	    + (class_level_adj[m_ptr->pclass][CLA_DEVICE] * m_ptr->lev / 3);
 	  if (py.flags.confused > 0)
 	    chance = chance / 2;
+	  if (personality == PERS_SHREWD)
+	    chance += 8;
 	  if ((chance < USE_DEVICE) && (randint(USE_DEVICE - chance + 1) == 1))
 	    chance = USE_DEVICE; /* Give everyone a slight chance */
 	  if (chance <= 0)  chance = 1;
@@ -187,5 +189,51 @@ void aim()
 		add_inscribe(i_ptr, ID_EMPTY);
 	    }
 	}
+    }
+}
+
+/* A spectre spends one wand charge for a little food or a little mana.
+   The wand's spell is not learned, and no other race can do this. */
+void spectre_sip()
+{
+  int j, k, item_val;
+  register inven_type *i_ptr;
+  register struct misc *m_ptr;
+
+  free_turn_flag = TRUE;
+  if (py.misc.prace != RACE_SPECTRE)
+    {
+      msg_print("Only a spectre can draw on a charge.");
+      return;
+    }
+  if (inven_ctr == 0)
+    msg_print("But you are not carrying anything.");
+  else if (!find_range(TV_WAND, TV_NEVER, &j, &k))
+    msg_print("You are not carrying any wands.");
+  else if (get_item(&item_val, "Draw from which wand?", j, k, CNIL, CNIL))
+    {
+      i_ptr = &inventory[item_val];
+      if (i_ptr->p1 < 1)
+	{
+	  msg_print("The wand has no charges left.");
+	  return;
+	}
+      free_turn_flag = FALSE;
+      i_ptr->p1--;
+      m_ptr = &py.misc;
+      if (randint(2) == 1)
+	{
+	  add_food(1200);
+	  msg_print("The charge eases your hunger.");
+	}
+      else
+	{
+	  m_ptr->cmana += 2 + (int)m_ptr->lev / 4;
+	  if (m_ptr->cmana > m_ptr->mana)
+	    m_ptr->cmana = m_ptr->mana;
+	  prt_cmana();
+	  msg_print("The charge steadies you.");
+	}
+      desc_charges(item_val);
     }
 }

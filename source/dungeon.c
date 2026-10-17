@@ -28,6 +28,8 @@ static int enchanted(inven_type *);
 static void examine_book(void);
 static void go_up(void);
 static void go_down(void);
+static int confirm_stairs(void);
+static void destroy_junk(void);
 static void jamdoor(void);
 static void refill_lamp(void);
 #else
@@ -40,6 +42,8 @@ static int enchanted();
 static void examine_book();
 static void go_up();
 static void go_down();
+static int confirm_stairs();
+static void destroy_junk();
 static void jamdoor();
 static void refill_lamp();
 #endif
@@ -209,7 +213,15 @@ void dungeon()
       /* Note: Speeded up characters really burn up the food!  */
       if (f_ptr->speed < 0)
 	f_ptr->food -=	f_ptr->speed*f_ptr->speed;
-      f_ptr->food -= f_ptr->food_digested;
+      {
+	int digest;
+
+	digest = f_ptr->food_digested;
+	/* Patient characters make a ration last a little longer. */
+	if (personality == PERS_PATIENT && digest > 1)
+	  digest--;
+	f_ptr->food -= digest;
+      }
       if (f_ptr->food < 0)
 	{
 	  take_hit (-f_ptr->food/16, "starvation");   /* -CJS- */
@@ -219,6 +231,8 @@ void dungeon()
       if (f_ptr->regenerate)  regen_amount = regen_amount * 3 / 2;
       if ((py.flags.status & PY_SEARCH) || f_ptr->rest != 0)
 	regen_amount = regen_amount * 2;
+      if (personality == PERS_PATIENT && f_ptr->rest != 0)
+	regen_amount = regen_amount * 3 / 2;
       if ((py.flags.poisoned < 1) && (p_ptr->chp < p_ptr->mhp))
 	regenhp(regen_amount);
       if (p_ptr->cmana < p_ptr->mana)
@@ -900,6 +914,8 @@ char com_val;
     case '-':
     case '=':
     case '{':
+    case '}':
+    case ']':
     case '?':
     case 'A':
       break;
@@ -1170,6 +1186,13 @@ char com_val;
     case '{':		/* ({) inscribe an object    */
       scribe_object ();
       free_turn_flag = TRUE;
+      break;
+    case '}':		/* (}) destroy items marked junk */
+      destroy_junk();
+      free_turn_flag = TRUE;
+      break;
+    case ']':		/* (]) a spectre draws a wand charge */
+      spectre_sip();
       break;
     case '!':		/* (!) escape to the shell */
     case '$':
@@ -1585,6 +1608,8 @@ char c;
     case CTRL('X'):
     case '=':
     case '{':
+    case '}':
+    case ']':
     case '/':
     case '<':
     case '>':
@@ -1838,6 +1863,56 @@ static void examine_book()
 }
 
 
+/* Ask before the stairs when hit points are very low. */
+static int confirm_stairs()
+{
+  if (py.misc.mhp > 0 && py.misc.chp > 0 && py.misc.chp * 5 < py.misc.mhp)
+    {
+      if (!get_check("You are badly hurt. Take the stairs anyway?"))
+	{
+	  free_turn_flag = TRUE;
+	  return FALSE;
+	}
+    }
+  return TRUE;
+}
+
+/* Destroy every pack item whose inscription is the word junk. */
+static void destroy_junk()
+{
+  int i, n;
+  char buf[INSCRIP_SIZE];
+  char *s, *d;
+
+  n = 0;
+  i = inven_ctr - 1;
+  while (i >= 0)
+    {
+      s = inventory[i].inscrip;
+      d = buf;
+      while (*s != '\0' && d < buf + INSCRIP_SIZE - 1)
+	{
+	  *d = (*s >= 'A' && *s <= 'Z') ? (*s - 'A' + 'a') : *s;
+	  d++;
+	  s++;
+	}
+      *d = '\0';
+      if (strcmp(buf, "junk") == 0)
+	{
+	  inven_destroy(i);
+	  n++;
+	  if (i >= inven_ctr)
+	    i = inven_ctr - 1;
+	}
+      else
+	i--;
+    }
+  if (n == 0)
+    msg_print("Nothing in your pack is marked junk.");
+  else
+    msg_print("You destroy everything marked junk.");
+}
+
 /* Go up one level					-RAK-	*/
 static void go_up()
 {
@@ -1848,6 +1923,8 @@ static void go_up()
   if (c_ptr->tptr != 0)
     if (t_list[c_ptr->tptr].tval == TV_UP_STAIR)
       {
+	if (!confirm_stairs())
+	  return;
 	dun_level--;
 	new_level_flag = TRUE;
 	msg_print("You enter a maze of up staircases.");
@@ -1876,6 +1953,8 @@ static void go_down()
   if (c_ptr->tptr != 0)
     if (t_list[c_ptr->tptr].tval == TV_DOWN_STAIR)
       {
+	if (!confirm_stairs())
+	  return;
 	dun_level++;
 	new_level_flag = TRUE;
 	msg_print("You enter a maze of down staircases.");

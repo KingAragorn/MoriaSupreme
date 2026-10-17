@@ -28,6 +28,7 @@ static void get_history(void);
 static void get_sex(void);
 static void get_ahw(void);
 static void get_class(void);
+static void choose_personality(void);
 static int monval(int8u);
 static void get_money(void);
 #endif
@@ -466,6 +467,85 @@ static void get_class()
 }
 
 
+/* Temperament is one extra birth choice. The stat nudge is baked into
+   the rolled stats here, so a later load does not apply it again. */
+static void choose_personality()
+{
+  int j, exit_flag;
+  char s;
+  char tmp_str[80];
+  register player_type *p_ptr;
+  register int i;
+
+  clear_from(19);
+  put_buffer("Choose a temperament (? for Help):", 19, 2);
+  for (j = 0; j < MAX_PERSONALITY; j++)
+    {
+      (void) sprintf(tmp_str, "%c) %s", 'a' + j, personality_name(j));
+      put_buffer(tmp_str, 20 + (j / 3), 2 + (j % 3) * 24);
+    }
+  exit_flag = FALSE;
+  personality = PERS_ORDINARY;
+  do
+    {
+      move_cursor(19, 36);
+      s = inkey();
+      j = s - 'a';
+      if (j >= 0 && j < MAX_PERSONALITY)
+	{
+	  personality = (int8u)j;
+	  exit_flag = TRUE;
+	}
+      else if (s == '?')
+	helpfile(MORIA_WELCOME);
+      else
+	bell();
+    }
+  while (!exit_flag);
+
+  p_ptr = &py;
+  switch (personality)
+    {
+    case PERS_MIGHTY:
+      change_stat(A_STR, 2);
+      change_stat(A_DEX, -2);
+      break;
+    case PERS_SHREWD:
+      change_stat(A_INT, 2);
+      change_stat(A_CON, -2);
+      p_ptr->misc.srh += 4;
+      break;
+    case PERS_NIMBLE:
+      change_stat(A_DEX, 2);
+      change_stat(A_STR, -1);
+      p_ptr->misc.stl += 1;
+      break;
+    case PERS_PIOUS:
+      change_stat(A_WIS, 2);
+      change_stat(A_STR, -1);
+      break;
+    default:
+      break;
+    }
+  for (i = 0; i < 6; i++)
+    {
+      p_ptr->stats.cur_stat[i] = p_ptr->stats.max_stat[i];
+      set_use_stat(i);
+    }
+  p_ptr->misc.ptodam = todam_adj();
+  p_ptr->misc.ptohit = tohit_adj();
+  p_ptr->misc.ptoac = toac_adj();
+  p_ptr->misc.dis_td = p_ptr->misc.ptodam;
+  p_ptr->misc.dis_th = p_ptr->misc.ptohit;
+  p_ptr->misc.dis_tac = p_ptr->misc.ptoac;
+  p_ptr->misc.mhp = con_adj() + p_ptr->misc.hitdie;
+  p_ptr->misc.chp = p_ptr->misc.mhp;
+  p_ptr->misc.chp_frac = 0;
+  clear_from(19);
+  put_buffer("Temperament :", 6, 1);
+  put_buffer(personality_name((int)personality), 6, 15);
+}
+
 /* Given a stat value, return a monetary value, which affects the amount
    of gold a player has. */
 static int monval (i)
@@ -538,6 +618,7 @@ void create_character()
   while (exit_flag == 1);
 
   get_class();
+  choose_personality();
   get_money();
   put_stats();
   put_misc2();

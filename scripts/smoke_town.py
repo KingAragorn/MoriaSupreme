@@ -26,6 +26,10 @@ class Town(Session):
     def __init__(self, binary, home, new_game=True):
         self.home = home
         if new_game:
+            # A retry must not inherit a save. A new game will not overwrite it.
+            leftover = os.path.join(home, "moriasupreme.save")
+            if os.path.exists(leftover):
+                os.remove(leftover)
             # Session always passes -n.
             super().__init__(binary, home)
         else:
@@ -66,7 +70,17 @@ class Town(Session):
                 return
 
 
-def create(session, race_letter, class_letter, name):
+TEMPERAMENT_NAMES = {
+    "a": "Ordinary",
+    "b": "Mighty",
+    "c": "Shrewd",
+    "d": "Nimble",
+    "e": "Pious",
+    "f": "Patient",
+}
+
+
+def create(session, race_letter, class_letter, name, temperament="a", shots=None, shot_name=None):
     if not session.wait_for("Press any key to continue", 12):
         return "news missing\n" + session.text()
     session.send(" ")
@@ -82,11 +96,20 @@ def create(session, race_letter, class_letter, name):
     if not session.wait_for("Choose a class"):
         return "class prompt missing\n" + session.text()
     session.send(class_letter)
+    if not session.wait_for("temperament"):
+        return "temperament prompt missing\n" + session.text()
+    session.send(temperament)
     if not session.wait_for("player's name"):
         return "name prompt missing\n" + session.text()
     session.send(name + "\r")
     if not session.wait_for("or Q to exit"):
         return "sheet missing\n" + session.text()
+    expected = TEMPERAMENT_NAMES.get(temperament, "Ordinary")
+    lines = session.text().splitlines()
+    if len(lines) < 7 or expected not in lines[6]:
+        return "sheet temperament is not %s\n%s" % (expected, session.text())
+    if shots is not None and shot_name:
+        shots[shot_name] = clone_screen(session.screen)
     session.send(" ")
     # A caster may be told they can learn a prayer before the map is drawn.
     # That -more- sits on the sheet, so the map's @ is not up yet.
@@ -492,6 +515,105 @@ def run_hidden(binary, home, class_letter, name, expect_hall):
         session.close()
 
 
+def run_hengband(binary, home, shots):
+    """Temperament, junk, spectre refusal, armor reading, locker, wanted board."""
+    session = Town(binary, home, new_game=True)
+    session.home = home
+    try:
+        err = create(session, "a", "a", "Mighty", temperament="b", shots=shots, shot_name="temperament")
+        if err:
+            return err
+        session.send("}")
+        if not session.wait_for("marked junk", 4):
+            return "junk command missing\n" + session.text()
+        session.send("]")
+        if not session.wait_for("Only a spectre", 4):
+            return "spectre command missing\n" + session.text()
+        entered = approach(session, "7")
+        if entered != "menu":
+            return "hall entry was %s\n%s" % (entered, session.text())
+        session.send("a")
+        if not session.wait_for("armor reading", 4):
+            return "armor reading missing\n" + session.text()
+        if shots is not None:
+            shots["armor"] = clone_screen(session.screen)
+        session.send(" ")
+        session.pump(0.4)
+        if "What service" not in session.text() and "adventurers' hall" not in session.text():
+            return "armor reading did not return\n" + session.text()
+        leave_menu(session)
+        if not session.wait_for("@", 4):
+            return "did not leave the hall\n" + session.text()
+        entered = approach(session, "8")
+        if entered != "menu":
+            return "bank entry was %s\n%s" % (entered, session.text())
+        session.send("l")
+        if not session.wait_for("The locker", 4):
+            return "locker missing\n" + session.text()
+        if "empty" not in session.text():
+            return "new locker was not empty\n" + session.text()
+        if shots is not None:
+            shots["locker"] = clone_screen(session.screen)
+        session.send("e")
+        session.pump(0.4)
+        leave_menu(session)
+        if not session.wait_for("@", 4):
+            return "did not leave the bank\n" + session.text()
+        entered = approach(session, "?")
+        if entered != "menu":
+            return "board entry was %s\n%s" % (entered, session.text())
+        text = session.text()
+        if "Wanted:" not in text and "Kill " not in text:
+            return "board has neither a wanted notice nor a kill job\n" + text
+        if "Bring " not in text:
+            return "board is missing the fetch job\n" + text
+        if shots is not None:
+            shots["board"] = clone_screen(session.screen)
+        leave_menu(session)
+        return save_and_quit(session)
+    finally:
+        session.close()
+
+
+def run_patch1_save(binary, home, save_src):
+    import shutil
+
+    os.makedirs(home, exist_ok=True)
+    shutil.copy(save_src, os.path.join(home, "moriasupreme.save"))
+    os.chmod(os.path.join(home, "moriasupreme.save"), 0o600)
+    session = Town(binary, home, new_game=False)
+    session.home = home
+    try:
+        if not session.wait_for("Press any key to continue", 12):
+            return "patch1 news missing\n" + session.text()
+        session.send(" ")
+        if not session.wait_for("Warrior", 8):
+            return "patch1 sheet missing the warrior\n" + session.text()
+        text = session.text()
+        if "Choose a race" in text:
+            return "patch1 save started a new character\n" + text
+        lines = text.splitlines()
+        if len(lines) < 7 or "Ordinary" not in lines[6]:
+            return "patch1 save is not Ordinary\n" + text
+        session.send(" ")
+        if not session.wait_for("@", 8):
+            return "patch1 map missing\n" + session.text()
+        entered = approach(session, "8")
+        if entered != "menu":
+            return "patch1 bank was %s\n%s" % (entered, session.text())
+        session.send("l")
+        if not session.wait_for("The locker", 4):
+            return "patch1 locker missing\n" + session.text()
+        if "empty" not in session.text():
+            return "patch1 locker was not empty\n" + session.text()
+        session.send("e")
+        session.pump(0.3)
+        leave_menu(session)
+        return save_and_quit(session)
+    finally:
+        session.close()
+
+
 def run_phase1_save(phase1, phase2, home):
     session = Town(phase1, home, new_game=True)
     session.home = home
@@ -529,12 +651,13 @@ def run_phase1_save(phase1, phase2, home):
 
 def main():
     binary = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "build/moriasupreme")
-    phase1 = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else ""
+    phase1 = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] else ""
     shot_dir = sys.argv[3] if len(sys.argv) > 3 else ""
     home_root = "/tmp/moriasupreme-town-%d" % os.getpid()
     os.makedirs(home_root, exist_ok=True)
     shots = {} if shot_dir else None
     checks = [
+        ("hengband", lambda: run_hengband(binary, os.path.join(home_root, "heng"), shots)),
         ("priest", lambda: run_priest(binary, os.path.join(home_root, "priest"), shots)),
         ("bard", lambda: run_bard(binary, os.path.join(home_root, "bard"))),
         ("druid", lambda: run_druid(binary, os.path.join(home_root, "druid"))),
@@ -546,7 +669,7 @@ def main():
             ("phase1-save", lambda: run_phase1_save(phase1, binary, os.path.join(home_root, "old")))
         )
     failed = False
-    for sub in ("priest", "bard", "druid", "rogue", "warrior", "old"):
+    for sub in ("heng", "priest", "bard", "druid", "rogue", "warrior", "old"):
         os.makedirs(os.path.join(home_root, sub), exist_ok=True)
     for name, fn in checks:
         print("run %s" % name, flush=True)

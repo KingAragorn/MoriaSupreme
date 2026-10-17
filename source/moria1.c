@@ -150,6 +150,11 @@ void calc_bonuses()
       plus_tohit += 3;
       plus_ac -= 4;
     }
+  /* Pious is worse with a weapon. Patient is slower to swing. */
+  if (personality == PERS_PIOUS)
+    plus_tohit -= 2;
+  else if (personality == PERS_PATIENT)
+    plus_tohit -= 1;
 
   old_dis_ac = m_ptr->dis_ac;
   m_ptr->ptohit	 = tohit_adj()+plus_tohit;	      /* Real To Hit   */

@@ -971,7 +971,10 @@ treasure_type object_list[MAX_OBJECTS] = {
     0,	5000,	73,   1,  40,	0,   0,	 0,   0, {0,0}	,  1},
 /* Druid grove book. subval 80 so a mage's book scan can skip it. */
 {"[Grove Workings]"		,0x000000FFL, TV_MAGIC_BOOK, '?',/* 438 */
-    0,	  80,	80,   1,  30,	0,   0,	 0,   0, {1,1}	,  1}
+    0,	  80,	80,   1,  30,	0,   0,	 0,   0, {1,1}	,  1},
+/* A heavier ration. p1 is the food it restores. subval 97 is its own. */
+{"& travel loaf~"		,0x00000000L, TV_FOOD, ',',	/* 439 */
+ 9000,	   8,	97,   1,  20,	0,   0,	 0,   0, {0,0}	,  0}
 };
 
 char *special_names[SN_ARRAY_SIZE] = {

@@ -119,6 +119,9 @@ extern int32u spell_worked2;
 extern int8u town_patron;	/* PATRON_* , 0 if undedicated */
 extern int32 bank_gold;
 extern town_quest_type town_quests[TOWN_QUESTS];
+extern int8u personality;	/* PERS_* , patch 2 trailer */
+extern int8u locker_ctr;
+extern inven_type locker[LOCKER_SLOTS];
 extern int8u spell_order[32];	/* remember order that spells are learned in */
 extern int16u player_init[MAX_CLASS][5];
 extern int16 total_winner;
@@ -630,6 +633,7 @@ void town_temple_notice(void);
 void town_dedicate(void);
 void town_note_kill(int);
 int town_bard_fail(void);
+char *personality_name(int);
 void town_bard_played(void);
 int town_grove_offer(void);
 void town_cast_grove(void);
@@ -657,6 +661,7 @@ int topen(char *, int, int);
 
 /* wands.c */
 void aim(void);
+void spectre_sip(void);
 
 /* wizard.c */
 void wizard_light(void);
@@ -1108,6 +1113,7 @@ void town_temple_notice();
 void town_dedicate();
 void town_note_kill();
 int town_bard_fail();
+char *personality_name();
 void town_bard_played();
 int town_grove_offer();
 void town_cast_grove();
@@ -1135,6 +1141,7 @@ int topen();
 
 /* wands.c */
 void aim();
+void spectre_sip();
 
 /* wizard.c */
 void wizard_light();

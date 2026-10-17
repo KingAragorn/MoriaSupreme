@@ -14,6 +14,7 @@ Command summary: (@ is optional count, ~ is direction, ^R redraws, ESC aborts)
   q        Quaff a potion              |   =        Set options
   r        Read a scroll               |   ?        Type this page
 @ s        Search for traps or doors   |   {        Inscribe an object
+  }        Destroy items marked junk  |   ]        Spectre draws a charge
   t        Take off an item            | @ -        Move without pickup
   u        Use a staff                 |   . ~      Run in direction
   v        Version info and credits    |   /        Identify a character
