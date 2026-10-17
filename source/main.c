@@ -133,6 +133,13 @@ char *argv[];
 
   /* default command set defined in config.h file */
   rogue_like_commands = ROGUE_LIKE;
+#ifdef __EMSCRIPTEN__
+  {
+    /* Before the news screen, so the page toggle is already in effect. */
+    extern void moria_load_keyset();
+    moria_load_keyset();
+  }
+#endif
 
 #ifdef MORIA_POSIX
   moria_init_paths();
@@ -307,6 +314,15 @@ char *argv[];
 
   if (force_rogue_like)
     rogue_like_commands = force_keys_to;
+#ifdef __EMSCRIPTEN__
+  else
+    {
+      /* Page toggle, stored next to the save in IndexedDB. Applied after a
+         save load so a reload keeps the choice even if that save is older. */
+      extern void moria_load_keyset();
+      moria_load_keyset();
+    }
+#endif
 
   magic_init();
 

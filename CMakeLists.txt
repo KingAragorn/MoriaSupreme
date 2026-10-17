@@ -74,7 +74,7 @@ if(EMSCRIPTEN)
   # globals in variable.c, player.c, and monsters.c disappear, and the
   # link then reports them undefined. -fno-common is applied below.
   set_target_properties(moriasupreme PROPERTIES
-    LINK_FLAGS "-sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -sSTACK_SIZE=1048576 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 -sFORCE_FILESYSTEM=1 -sINVOKE_RUN=0 -sEXIT_RUNTIME=1 -sEXPORTED_FUNCTIONS=_main,_moria_push_key -sEXPORTED_RUNTIME_METHODS=FS,callMain,ccall -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/files@/files"
+    LINK_FLAGS "-sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -sSTACK_SIZE=1048576 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 -sFORCE_FILESYSTEM=1 -sINVOKE_RUN=0 -sEXIT_RUNTIME=1 -sEXPORTED_FUNCTIONS=_main,_moria_push_key,_moria_rogue_like,_moria_set_rogue_like -sEXPORTED_RUNTIME_METHODS=FS,callMain,ccall -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/files@/files"
   )
 else()
   target_include_directories(moriasupreme PRIVATE ${CURSES_INCLUDE_DIRS})
