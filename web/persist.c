@@ -10,6 +10,52 @@
    as IDBFS. syncfs is asynchronous; this waits so a reload sees the write. */
 
 #include <emscripten.h>
+#include <stdio.h>
+
+/* The in-game "Rogue like commands" flag. The character save stores it
+   too. This file is the browser's own copy, so the page toggle survives
+   a reload the same way a save does. */
+extern int rogue_like_commands;
+
+#define MORIA_KEYSET_PATH "/home/web_user/.moriasupreme/keyset"
+
+void moria_store_keyset(void)
+{
+  FILE *fp;
+
+  fp = fopen(MORIA_KEYSET_PATH, "w");
+  if (fp == NULL)
+    return;
+  fputc(rogue_like_commands ? '1' : '0', fp);
+  fclose(fp);
+}
+
+void moria_load_keyset(void)
+{
+  FILE *fp;
+  int c;
+
+  fp = fopen(MORIA_KEYSET_PATH, "r");
+  if (fp == NULL)
+    return;
+  c = fgetc(fp);
+  fclose(fp);
+  if (c == '0')
+    rogue_like_commands = 0;
+  else if (c == '1')
+    rogue_like_commands = 1;
+}
+
+int moria_rogue_like(void)
+{
+  return rogue_like_commands ? 1 : 0;
+}
+
+void moria_set_rogue_like(int on)
+{
+  rogue_like_commands = on ? 1 : 0;
+  moria_store_keyset();
+}
 
 void moria_persist_sync(void)
 {

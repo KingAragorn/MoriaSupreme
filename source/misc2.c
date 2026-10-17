@@ -895,6 +895,12 @@ void set_options()
       switch(inkey())
 	{
 	case ESCAPE:
+#ifdef __EMSCRIPTEN__
+	  {
+	    extern void moria_store_keyset();
+	    moria_store_keyset();
+	  }
+#endif
 	  return;
 	case '-':
 	  if (i > 0)

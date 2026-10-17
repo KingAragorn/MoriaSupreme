@@ -307,6 +307,15 @@ char *argv[];
 
   if (force_rogue_like)
     rogue_like_commands = force_keys_to;
+#ifdef __EMSCRIPTEN__
+  else
+    {
+      /* Page toggle, stored next to the save in IndexedDB. Applied after a
+         save load so a reload keeps the choice even if that save is older. */
+      extern void moria_load_keyset();
+      moria_load_keyset();
+    }
+#endif
 
   magic_init();
 

@@ -6,21 +6,64 @@
   <title>Moria Supreme</title>
   <link rel="stylesheet" href="vendor/xterm.min.css">
   <style>
-    html, body { margin: 0; height: 100%; background: #111; color: #ddd; }
+    html, body { margin: 0; height: 100%; background: #111; color: #ddd; overflow: hidden; }
     body { font-family: Georgia, serif; display: flex; flex-direction: column; align-items: center; }
-    header { width: min(100%, 980px); padding: 10px 16px 0; box-sizing: border-box; }
+    header { width: min(100%, 980px); padding: 8px 16px 0; box-sizing: border-box; }
     h1 { font-size: 1.15rem; font-weight: normal; margin: 0 0 4px; letter-spacing: 0.04em; }
-    p { margin: 0 0 8px; font-family: sans-serif; font-size: 13px; color: #aaa; }
-    #screen { width: min(100%, 980px); height: calc(100vh - 72px); padding: 4px 0 12px; box-sizing: border-box; }
+    p, label { margin: 0 0 6px; font-family: sans-serif; font-size: 13px; color: #aaa; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 4px; }
+    label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    #screen { width: min(100%, 980px); flex: 1; min-height: 0; padding: 0 0 8px; box-sizing: border-box; }
     #screen .xterm { height: 100%; }
+    #dpad {
+      display: none;
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(3, 52px);
+      gap: 6px;
+      z-index: 5;
+      touch-action: none;
+      user-select: none;
+    }
+    #dpad button {
+      font: 22px/1 sans-serif;
+      color: #ddd;
+      background: #2a2a2a;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 0;
+      touch-action: none;
+    }
+    #dpad button:active { background: #444; }
+    body.show-dpad #dpad { display: grid; }
+    @media (pointer: coarse) {
+      #dpad { display: grid; }
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Moria Supreme</h1>
-    <p>hjkl moves. Ctrl-X saves. The save and the score file stay in this browser.</p>
+    <p id="help">Numpad 1-9 moves, with or without Num Lock. Two arrows at once make a diagonal. Shift runs. Roguelike keys are h j k l and y u b n. That choice is remembered in this browser. Ctrl-X saves.</p>
+    <div class="controls">
+      <label><input type="checkbox" id="rogue" checked> Roguelike keys</label>
+      <label><input type="checkbox" id="show-pad"> Direction pad</label>
+    </div>
   </header>
   <div id="screen"></div>
+  <div id="dpad" aria-hidden="true">
+    <button type="button" data-dir="7" aria-label="up left">&#8598;</button>
+    <button type="button" data-dir="8" aria-label="up">&#8593;</button>
+    <button type="button" data-dir="9" aria-label="up right">&#8599;</button>
+    <button type="button" data-dir="4" aria-label="left">&#8592;</button>
+    <button type="button" data-dir="5" aria-label="stay">&#183;</button>
+    <button type="button" data-dir="6" aria-label="right">&#8594;</button>
+    <button type="button" data-dir="1" aria-label="down left">&#8601;</button>
+    <button type="button" data-dir="2" aria-label="down">&#8595;</button>
+    <button type="button" data-dir="3" aria-label="down right">&#8600;</button>
+  </div>
   <script src="vendor/xterm.min.js"></script>
   <script>
     var term = new Terminal({
@@ -45,6 +88,30 @@
       return lines.join("\n");
     };
     window.moriaExited = null;
+    window.moriaLastDir = 0;
+    window.moriaLastRun = false;
+
+    var ROGUE_MOVE = { 1: "b", 2: "j", 3: "n", 4: "h", 5: ".", 6: "l", 7: "y", 8: "k", 9: "u" };
+    var ROGUE_RUN = { 1: "B", 2: "J", 3: "N", 4: "H", 5: ".", 6: "L", 7: "Y", 8: "K", 9: "U" };
+    /* Original keypad, plus the Home/End/Page keys a numpad sends with Num Lock off. */
+    var PAD_DIR = {
+      Numpad1: 1, NumpadEnd: 1, End: 1,
+      Numpad2: 2, NumpadArrowDown: 2,
+      Numpad3: 3, NumpadPageDown: 3, PageDown: 3,
+      Numpad4: 4, NumpadArrowLeft: 4,
+      Numpad5: 5, NumpadClear: 5, Clear: 5,
+      Numpad6: 6, NumpadArrowRight: 6,
+      Numpad7: 7, NumpadHome: 7, Home: 7,
+      Numpad8: 8, NumpadArrowUp: 8,
+      Numpad9: 9, NumpadPageUp: 9, PageUp: 9
+    };
+    var ARROW = { ArrowUp: 8, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 6 };
+    var CHORD_MS = 40;
+    var heldArrow = {};
+    var chordTimer = null;
+    var pendingDir = 0;
+    var pendingShift = false;
+    var rogueLock = false;
 
     function pushKey(code) {
       if (window.Module && typeof Module.ccall === "function")
@@ -53,17 +120,182 @@
         (window.moriaPending = window.moriaPending || []).push(code);
     }
 
-    term.onData(function (data) {
-      var arrows = { "\u001b[A": 107, "\u001b[B": 106, "\u001b[D": 104, "\u001b[C": 108,
-                     "\u001bOA": 107, "\u001bOB": 106, "\u001bOD": 104, "\u001bOC": 108 };
-      if (arrows[data] !== undefined) {
-        pushKey(arrows[data]);
+    function rogueOn() {
+      if (window.Module && typeof Module.ccall === "function") {
+        try { return !!Module.ccall("moria_rogue_like", "number", [], []); }
+        catch (e) { return true; }
+      }
+      return document.getElementById("rogue").checked;
+    }
+
+    function sendDir(n, run) {
+      var ch;
+      window.moriaLastDir = n;
+      window.moriaLastRun = !!run && n !== 5;
+      if (run && n !== 5) {
+        if (rogueOn())
+          pushKey(ROGUE_RUN[n].charCodeAt(0));
+        else {
+          /* Original keyset runs with "." and then a direction. */
+          pushKey(46);
+          pushKey(48 + n);
+        }
         return;
       }
+      if (rogueOn())
+        ch = ROGUE_MOVE[n];
+      else
+        ch = String(n);
+      pushKey(ch.charCodeAt(0));
+    }
+
+    function arrowDir() {
+      var n = !!heldArrow.ArrowUp;
+      var s = !!heldArrow.ArrowDown;
+      var w = !!heldArrow.ArrowLeft;
+      var e = !!heldArrow.ArrowRight;
+      if (n && s) { n = false; s = false; }
+      if (w && e) { w = false; e = false; }
+      if (n && w) return 7;
+      if (n && e) return 9;
+      if (s && w) return 1;
+      if (s && e) return 3;
+      if (n) return 8;
+      if (s) return 2;
+      if (w) return 4;
+      if (e) return 6;
+      return 0;
+    }
+
+    function clearChord() {
+      if (chordTimer) {
+        clearTimeout(chordTimer);
+        chordTimer = null;
+      }
+      pendingDir = 0;
+    }
+
+    function isArrow(code) {
+      return ARROW[code] !== undefined;
+    }
+
+    function isPad(code) {
+      return PAD_DIR[code] !== undefined;
+    }
+
+    function onKey(ev) {
+      var typing = ev.target && (ev.target.id === "rogue" || ev.target.id === "show-pad");
+      if (typing)
+        return;
+      /* Keep the page from scrolling. Stop the terminal from also turning
+         these into escape sequences or digits. */
+      if (isArrow(ev.code) || isPad(ev.code)) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      if (ev.type === "keyup") {
+        if (isArrow(ev.code))
+          heldArrow[ev.code] = false;
+        return;
+      }
+      if (ev.type !== "keydown")
+        return;
+      if (isPad(ev.code)) {
+        sendDir(PAD_DIR[ev.code], ev.shiftKey);
+        return;
+      }
+      if (!isArrow(ev.code))
+        return;
+      heldArrow[ev.code] = true;
+      if (ev.repeat) {
+        if (chordTimer)
+          return;
+        var again = arrowDir();
+        if (again)
+          sendDir(again, ev.shiftKey);
+        return;
+      }
+      var dir = arrowDir();
+      if (dir === 1 || dir === 3 || dir === 7 || dir === 9) {
+        clearChord();
+        sendDir(dir, ev.shiftKey);
+        return;
+      }
+      if (chordTimer)
+        clearTimeout(chordTimer);
+      pendingDir = dir;
+      pendingShift = ev.shiftKey;
+      chordTimer = setTimeout(function () {
+        chordTimer = null;
+        if (pendingDir)
+          sendDir(pendingDir, pendingShift);
+        pendingDir = 0;
+      }, CHORD_MS);
+    }
+
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("keyup", onKey, true);
+
+    if (term.attachCustomKeyEventHandler) {
+      term.attachCustomKeyEventHandler(function (ev) {
+        if (isArrow(ev.code) || isPad(ev.code))
+          return false;
+        return true;
+      });
+    }
+
+    term.onData(function (data) {
       var i;
       for (i = 0; i < data.length; i++)
         pushKey(data.charCodeAt(i));
     });
+
+    var rogueBox = document.getElementById("rogue");
+    var padBox = document.getElementById("show-pad");
+    padBox.addEventListener("change", function () {
+      document.body.classList.toggle("show-dpad", padBox.checked);
+      document.getElementById("dpad").setAttribute("aria-hidden", padBox.checked ? "false" : "true");
+      term.focus();
+    });
+    rogueBox.addEventListener("change", function () {
+      if (!window.Module || typeof Module.ccall !== "function")
+        return;
+      rogueLock = true;
+      Module.ccall("moria_set_rogue_like", null, ["number"], [rogueBox.checked ? 1 : 0]);
+      if (Module.FS && Module.FS.syncfs)
+        Module.FS.syncfs(false, function (err) { if (err) console.error(err); });
+      term.focus();
+      setTimeout(function () { rogueLock = false; }, 600);
+    });
+
+    var padButtons = document.querySelectorAll("#dpad button");
+    var bi;
+    for (bi = 0; bi < padButtons.length; bi++) {
+      padButtons[bi].addEventListener("pointerdown", function (ev) {
+        ev.preventDefault();
+        sendDir(parseInt(this.getAttribute("data-dir"), 10), ev.shiftKey);
+        term.focus();
+      });
+    }
+
+    function readKeysetPref() {
+      try {
+        var text = Module.FS.readFile("/home/web_user/.moriasupreme/keyset", { encoding: "utf8" });
+        return text.charAt(0) !== "0";
+      } catch (e) {
+        return true;
+      }
+    }
+
+    setInterval(function () {
+      if (rogueLock || !window.Module || typeof Module.ccall !== "function")
+        return;
+      try {
+        var on = !!Module.ccall("moria_rogue_like", "number", [], []);
+        if (rogueBox.checked !== on)
+          rogueBox.checked = on;
+      } catch (e) {}
+    }, 400);
 
     var Module = {
       print: function (text) { term.write(String(text).replace(/\n/g, "\r\n")); },
@@ -72,7 +304,6 @@
       onExit: function (code) { window.moriaExited = code; },
       onRuntimeInitialized: function () {
         var FS = Module.FS;
-        // Emscripten's default HOME is /home/web_user. Saves and scores go there.
         try { FS.mkdir("/home"); } catch (e) {}
         try { FS.mkdir("/home/web_user"); } catch (e) {}
         FS.mount(FS.filesystems.IDBFS, {}, "/home/web_user");
@@ -81,6 +312,7 @@
           if (err)
             console.error(err);
           try { FS.mkdir("/home/web_user/.moriasupreme"); } catch (e2) {}
+          rogueBox.checked = readKeysetPref();
           queued = window.moriaPending || [];
           window.moriaPending = [];
           for (i = 0; i < queued.length; i++)
