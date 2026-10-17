@@ -120,6 +120,8 @@ A player write-up of MacMoria 5.5c (These Old Games, 2019) says that build's dru
 
 ## Other Moria variants
 
+This tree no longer contains the DOS, Atari ST, Amiga, Mac Classic, VMS, or IBM PC port sources. The table below is history: what those games added, not a build you can compile from here. Linux, macOS, and the browser build are the ones this repository builds.
+
 | Variant | What it added | Status | Source note |
 | --- | --- | --- | --- |
 | VMS Moria 4.8 / 5.0 | The original game. Six classes by the Umoria era. | included | Koeneke. Already the ancestor of this tree. |

@@ -20,21 +20,9 @@
 
 #ifdef unix
 
-#if defined(SYS_V) && defined(lint)
-/* for AIX, prevent hundreds of unnecessary lint errors, must define before
-   signal.h is included */
-#define _h_IEEETRAP
-typedef struct { int stuff; } fpvmach;
-#endif
 
 #include <signal.h>
 
-#ifdef M_XENIX
-#include <sys/types.h>
-#include <sys/select.h>
-/* For various selects from TCP/IP.  */
-#define bzero(addr,n)	memset((char *)addr, 0, n)
-#endif
 
 #ifndef USG
 #include <sys/time.h>
@@ -45,20 +33,10 @@ typedef struct { int stuff; } fpvmach;
 
 #ifdef USG
 #include <string.h>
-#if 0
-/* Used to include termio.h here, but this is unnecessary because it is
-   included in curses.h, and some systems fail when it gets included
-   twice.  */
-#include <termio.h>
-#endif
 #include <fcntl.h>
 #else
 #include <strings.h>
-#if defined(atarist) && defined(__GNUC__)
-/* doesn't have <sys/wait.h> */
-#else
 #include <sys/wait.h>
-#endif
 #endif
 
 /* This must be included after fcntl.h, which has a prototype for `open'
@@ -68,6 +46,10 @@ typedef struct { int stuff; } fpvmach;
 
 #include <pwd.h>
 #include <sys/errno.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+int moria_kbhit();
+#endif
 #ifdef MORIA_POSIX
 #include <sys/select.h>
 #include <sys/stat.h>
@@ -85,27 +67,11 @@ struct passwd *getpwnam();
 #endif
 #endif
 
-#if defined(SYS_V) && defined(lint)
-struct screen { int dumb; };
-#endif
 
 /* Fooling lint. Unfortunately, c defines all the TIO constants to be long,
    and lint expects them to be int. Also, ioctl is sometimes called with just
    two arguments. The following definition keeps lint happy. It may need to be
    reset for different systems. */
-#ifdef lint
-#ifdef Pyramid
-/* Pyramid makes constants greater than 65535 into long! Gakk! -CJS- */
-/*ARGSUSED*/
-/*VARARGS2*/
-static Ioctl(i, l, p) long l; char *p; { return 0; }
-#else
-/*ARGSUSED*/
-/*VARARGS2*/
-static Ioctl(i, l, p) char *p; { return 0; }
-#endif
-#define ioctl	    Ioctl
-#endif
 
 /* Provides for a timeout on input. Does a non-blocking read, consuming the
    data if any, and then returns 1 if data was read, zero otherwise.
@@ -126,6 +92,26 @@ static Ioctl(i, l, p) char *p; { return 0; }
 int check_input(microsec)
 int microsec;
 {
+#ifdef __EMSCRIPTEN__
+  int ch;
+
+  /* Keys arrive from the browser, not from stdin. Yield so a key typed
+     during rest or run can land in the queue. flush() passes 0 and stops
+     on the first 0, so a 1ms yield there is one sleep. */
+  if (!moria_kbhit())
+    {
+      emscripten_sleep(microsec > 1000 ? microsec / 1000 : 1);
+      if (!moria_kbhit())
+	return 0;
+    }
+  ch = getch();
+  if (ch == ERR)
+    {
+      eof_flag++;
+      return 0;
+    }
+  return 1;
+#else
 #ifdef MORIA_POSIX
   struct timeval tbuf;
   fd_set smask;
@@ -154,25 +140,15 @@ int microsec;
 #else
   struct timeval tbuf;
   int ch;
-#if defined(BSD4_3) || defined(M_XENIX)
-  fd_set smask;
-#else
   int smask;
-#endif
 #endif
 
   /* Return true if a read on descriptor 1 will not block. */
 #if !defined(USG) || defined(M_XENIX)
   tbuf.tv_sec = 0;
   tbuf.tv_usec = microsec;
-#if defined(BSD4_3) || defined(M_XENIX)
-  FD_ZERO(&smask);
-  FD_SET(fileno(stdin), &smask);
-  if (select(1, &smask, (fd_set *)0, (fd_set *)0, &tbuf) == 1)
-#else
   smask = 1;  /* i.e. (1 << 0) */
   if (select(1, &smask, (int *)0, (int *)0, &tbuf) == 1)
-#endif
     {
       ch = getch();
       /* check for EOF errors here, select sometimes works even when EOF */
@@ -207,99 +183,15 @@ int microsec;
     return 1;
 #endif
 #endif
-}
-
-#if 0
-/* This is not used, however, this should be compared against shell_out
-   in io.c */
-
-/* A command for the operating system. Standard library function
-   'system' is unsafe, as it leaves various file descriptors
-   open. This also is very careful with signals and interrupts,
-   and does rudimentary job control, and puts the terminal back
-   in a standard mode. */
-int system_cmd(p)
-char *p;
-{
-  int pgrp, pid, i, mask;
-  union wait w;
-  extern char *getenv();
-
-  mask = sigsetmask(~0);	/* No interrupts. */
-  restore_term();		/* Terminal in original state. */
-  /* Are we in the control terminal group? */
-  if (ioctl(0, TIOCGPGRP, (char *)&pgrp) < 0 || pgrp != getpgrp(0))
-    pgrp = -1;
-  pid = fork();
-  if (pid < 0)
-    {
-      (void) sigsetmask(mask);
-      moriaterm();
-      return -1;
-    }
-  if (pid == 0)
-    {
-      (void) sigsetmask(0);	/* Interrupts on. */
-      /* Transfer control terminal. */
-      if (pgrp >= 0)
-	{
-	  i = getpid();
-	  (void) ioctl(0, TIOCSPGRP, (char *)&i);
-	  (void) setpgrp(i, i);
-	}
-      for(i = 2; i < 30; i++)
-	(void) close(i);	/* Close all but standard in and out.*/
-      (void) dup2(1, 2);	/* Make standard error as standard out. */
-      if (p == 0 || *p == 0)
-	{
-	  p = getenv("SHELL");
-	  if (p)
-	    execl(p, p, 0);
-	  execl("/bin/sh", "sh", 0);
-	}
-      else
-	execl("/bin/sh", "sh", "-c", p, 0);
-      _exit(1);
-    }
-  /* Wait for child termination. */
-  for(;;)
-    {
-      i = wait3(&w, WUNTRACED, (struct rusage *)0);
-      if (i == pid)
-	{
-	  if (WIFSTOPPED(w))
-	    {
-	      /* Stop outselves, if child stops. */
-	      (void) kill(getpid(), SIGSTOP);
-	      /* Restore the control terminal, and restart subprocess. */
-	      if (pgrp >= 0)
-		(void) ioctl(0, TIOCSPGRP, (char *)&pid);
-	      (void) killpg(pid, SIGCONT);
-	    }
-	  else
-	    break;
-	}
-    }
-  /* Get the control terminal back. */
-  if (pgrp >= 0)
-    (void) ioctl(0, TIOCSPGRP, (char *)&pgrp);
-  (void) sigsetmask(mask);	/* Interrupts on. */
-  moriaterm();			/* Terminal in moria mode. */
-  return 0;
-}
 #endif
+}
+
 
 #ifndef MORIA_POSIX
 #ifdef USG
 unsigned short getuid();
 #else
-#ifndef SECURE
-#ifdef BSD4_3
-uid_t getuid();
-#else  /* other BSD versions */
 int getuid();
-#endif
-#endif
 #endif
 #endif
 
@@ -448,7 +340,7 @@ void moria_init_paths()
 #endif
 
   exe[0] = '\0';
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
   {
     ssize_t n = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
     if (n > 0)

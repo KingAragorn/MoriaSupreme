@@ -83,3 +83,7 @@ Patch 1 adds the town hall, bank, notice board, hidden guild door,
 four patrons, bard instruments, and a grove book for druids. Saves
 from patch 0 still load. The new fields are stored after the old
 character record.
+
+This build runs on Linux, on macOS, and in a web browser. The DOS,
+Atari ST, Amiga, Mac Classic, VMS, and IBM PC sources are not in the
+tree. The credits above for those ports stay.

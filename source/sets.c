@@ -109,14 +109,8 @@ inven_type *item;
 
 
 /*ARGSUSED*/	/* to shut up lint about unused argument */
-#ifdef __TURBOC__
-	#pragma argused
-#endif
 int set_null(item)
 inven_type *item;
-#if defined(MAC) && !defined(THINK_C)
-	#pragma unused(item)
-#endif
 {
   return(FALSE);
 }
@@ -240,22 +234,3 @@ int element;
   return(FALSE);
 }
 
-#ifdef MAC
-/* The last time tried, MPW failed to handle the initialized array of
-   function pointers properly.  hence, this hack. */
-int store_buy(storeno, element)
-int storeno;
-int element;
-{
-  switch (storeno)
-    {
-    case 0: return(general_store(element));
-    case 1: return(armory(element));
-    case 2: return(weaponsmith(element));
-    case 3: return(temple(element));
-    case 4: return(alchemist(element));
-    case 5: return(magic_shop(element));
-    }
-  return(FALSE);
-}
-#endif

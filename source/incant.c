@@ -13,9 +13,6 @@ void speak()
   register struct misc *p_ptr;
   register inven_type *i_ptr;
   register spell_type *m_ptr;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   free_turn_flag = TRUE;
   if (class[py.misc.pclass].spell != SAGE)

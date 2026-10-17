@@ -12,36 +12,16 @@
 #define STDIO_LOADED
 #endif
 
-#if 0
-/* moved to externs.h to avoid VMS 'psect' problem */
-#include <errno.h>
-#endif
 
-#ifdef __TURBOC__
-#include	<io.h>
-#include	<stdlib.h>
-#endif /* __TURBOC__ */
  
 #include "config.h"
 #include "constant.h"
 #include "types.h"
 
-#if defined(GEMDOS) && (__STDC__ == 0) && !defined(ATARIST_TC)
-#include <access.h>
-char *strcat();
-#endif
 
-#ifdef VMS
-#include <string.h>
-#include <file.h>
-#else
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#ifndef ATARIST_TC
 #include <fcntl.h>
-#endif
-#endif
 #else
 #include <strings.h>
 #include <sys/file.h>
@@ -51,22 +31,13 @@ char *strcat();
 void exit();
 #endif
 #endif
-#endif
 
 /* This must be included after fcntl.h, which has a prototype for `open'
    on some systems.  Otherwise, the `open' prototype conflicts with the
    `topen' declaration.  */
 #include "externs.h"
 
-#ifdef ATARIST_TC
-/* Include this to get prototypes for standard library functions.  */
-#include <stdlib.h>
-#endif
 
-#ifdef MAC
-#include "ScrnMgr.h"
-#define GNRL_ALRT	1024
-#endif
 
 /*
  *  init_scorefile
@@ -77,28 +48,11 @@ void exit();
  */
 void init_scorefile()
 {
-#ifdef MAC
-  appldirectory ();
-#endif
 
-#if defined(atarist) || defined(ATARI_ST) || defined(MAC)
-  highscore_fp = fopen(MORIA_TOP, "rb+");
-#else
   highscore_fp = fopen(MORIA_TOP, "r+");
-#endif
 
   if (highscore_fp == NULL)
     {
-#ifdef MAC
-      highscore_fp = fopen (MORIA_TOP, "wb");	/* Create it if not there.  */
-      if (highscore_fp == NULL)
-	{
-	  ParamText ("\pCan't create score file!", NULL, NULL, NULL);
-	  DoScreenALRT (GNRL_ALRT, akStop, fixHalf, fixThird);
-	  ExitToShell ();
-	}
-      setfileinfo (MORIA_TOP, currentdirectory (), SCORE_FTYPE);
-#else
 #ifdef MORIA_POSIX
       highscore_fp = fopen(MORIA_TOP, "w+");
 #endif
@@ -107,20 +61,10 @@ void init_scorefile()
 	  (void) fprintf (stderr, "Can't open score file \"%s\"\n", MORIA_TOP);
 	  exit(1);
 	}
-#endif
     }
-#if defined(MSDOS) || defined(VMS) || defined(MAC)
-  /* can't leave it open, since this causes problems on networked PCs and VMS,
-     we DO want to check to make sure we can open the file, though */
-  fclose (highscore_fp);
-#endif
 
-#ifdef MAC
-  restoredirectory ();
-#endif
 }
 
-#ifndef MAC
 /* Attempt to open the intro file			-RAK-	 */
 /* This routine also checks the hours file vs. what time it is	-Doc */
 void read_times()
@@ -173,9 +117,6 @@ void read_times()
       if ((file1 = fopen(MORIA_HOU, "r")) != NULL)
 	{
 	  clear_screen();
-#ifdef VMS
-	  restore_screen();
-#endif
 	  for (i = 0; fgets(in_line, 80, file1) != CNIL; i++)
 	    put_buffer(in_line, i, 0);
 	  pause_line (23);
@@ -189,26 +130,17 @@ void read_times()
   if ((file1 = fopen(MORIA_MOR, "r")) != NULL)
     {
       clear_screen();
-#ifdef VMS
-      restore_screen();
-#endif
       for (i = 0; fgets(in_line, 80, file1) != CNIL; i++)
 	put_buffer(in_line, i, 0);
       pause_line(23);
       (void) fclose(file1);
     }
 }
-#endif
 
 /* File perusal.	    -CJS-
    primitive, but portable */
 void helpfile(filename)
 char *filename;
-#ifdef MAC
-{
-  mac_helpfile(filename, TRUE);
-}
-#else
 {
   bigvtype tmp_str;
   FILE *file;
@@ -240,7 +172,6 @@ char *filename;
   (void) fclose(file);
   restore_screen();
 }
-#endif
 
 /* Prints a list of random objects to a file.  Note that -RAK-	 */
 /* the objects produced is a sampling of objects which		 */
@@ -252,12 +183,6 @@ void print_objects()
   vtype filename1; bigvtype tmp_str;
   register FILE *file1;
   register inven_type *i_ptr;
-#ifdef MAC
-  short vrefnum;
-#endif
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   prt("Produce objects on what level?: ", 0, 0);
   level = 0;
@@ -273,24 +198,13 @@ void print_objects()
     {
       if (nobj > 10000)
 	nobj = 10000;
-#ifdef MAC
-      (void) strcpy(filename1, "Objects");
-      if (doputfile("Save objects in:", filename1, &vrefnum))
-#else
       prt("File name: ", 0, 0);
       if (get_string(filename1, 0, 11, 64))
-#endif
 	{
 	  if (strlen(filename1) == 0)
 	    return;
-#ifdef MAC
-	  changedirectory(vrefnum);
-#endif
 	  if ((file1 = fopen(filename1, "w")) != NULL)
 	    {
-#ifdef MAC
-	      macbeginwait ();
-#endif
 
 	      (void) sprintf(tmp_str, "%d", nobj);
 	      prt(strcat(tmp_str, " random objects being produced..."), 0, 0);
@@ -307,28 +221,17 @@ void print_objects()
 		  magic_treasure(j, level);
 		  i_ptr = &t_list[j];
 		  store_bought(i_ptr);
-#ifdef ATARIST_MWC
-		  if (i_ptr->flags & (holder = TR_CURSED))
-#else
 		  if (i_ptr->flags & TR_CURSED)
-#endif
 		    add_inscribe(i_ptr, ID_DAMD);
 		  objdes(tmp_str, i_ptr, TRUE);
 		  (void) fprintf(file1, "%d %s\n", i_ptr->level, tmp_str);
 		}
 	      pusht((int8u)j);
 	      (void) fclose(file1);
-#ifdef MAC
-	      setfileinfo(filename1, vrefnum, INFO_FTYPE);
-	      macendwait ();
-#endif
 	      prt("Completed.", 0, 0);
 	    }
 	  else
 	    prt("File could not be opened.", 0, 0);
-#ifdef MAC
-	  restoredirectory();
-#endif
 	}
     }
   else
@@ -337,12 +240,8 @@ void print_objects()
 
 
 /* Print the character to a file or device		-RAK-	 */
-#ifdef MAC
-int file_character()
-#else
 int file_character(filename1)
 char *filename1;
-#endif
 {
   register int i;
   int j, xbth, xbthb, xfos, xsrh, xstl, xdis, xsave, xdev;
@@ -354,35 +253,9 @@ char *filename1;
   register inven_type *i_ptr;
   vtype out_val, prt1;
   char *p, *colon, *blank;
-#ifdef MAC
-  vtype filename1;
-  short vrefnum;
-#endif
 
-#ifdef MAC
-  (void) makefilename(filename1, "Stats", TRUE);
-  if (!doputfile("Save character description in:", filename1, &vrefnum))
-    return (FALSE);
-#endif
 
-#ifndef VMS
   /* VMS creates a new version of a file, so no need to check for rewrite. */
-#ifdef MAC
-  changedirectory(vrefnum);
-  fd = open (filename1, O_WRONLY|O_CREAT|O_TRUNC);
-  restoredirectory();
-  macbeginwait ();
-#else
-#if defined(GEMDOS) && (__STDC__ == 0) && !defined(ATARIST_TC)
-  if (!access(filename1, AREAD))
-    {
-      (void) sprintf(out_val, "Replace existing file %s?", filename1);
-      if (get_check(out_val))
-	fd = creat(filename1, 1);
-    }
-  else
-    fd = creat (filename1, 1);
-#else
   fd = open (filename1, O_WRONLY|O_CREAT|O_EXCL, 0644);
   if (fd < 0 && errno == EEXIST)
     {
@@ -390,8 +263,6 @@ char *filename1;
       if (get_check(out_val))
 	fd = open(filename1, O_WRONLY, 0644);
     }
-#endif
-#endif
   if (fd >= 0)
     {
       /* on some non-unix machines, fdopen() is not reliable, hence must call
@@ -401,10 +272,6 @@ char *filename1;
     }
   else
     file1 = NULL;
-#else /* VMS */
-  fd = -1;
-  file1 = fopen (filename1, "w");
-#endif
 
   if (file1 != NULL)
     {
@@ -412,11 +279,7 @@ char *filename1;
       put_qio();
       colon = ":";
       blank = " ";
-#ifdef MAC
-      (void) fprintf(file1, "\n\n");
-#else
       (void) fprintf(file1, "%c\n\n", CTRL('L'));
-#endif
       (void) fprintf(file1, " Name%9s %-23s", colon, py.misc.name);
       (void) fprintf(file1, " Age%11s %6d", colon, (int)py.misc.age);
       cnv_stat(py.stats.use_stat[A_STR], prt1);
@@ -534,11 +397,7 @@ char *filename1;
 	  }
 
       /* Write out the character's inventory.	     */
-#ifdef MAC
-      (void) fprintf(file1, "\n\n");
-#else
       (void) fprintf(file1, "%c\n\n", CTRL('L'));
-#endif
       (void) fprintf(file1, "  [General Inventory List]\n\n");
       if (inven_ctr == 0)
 	(void) fprintf(file1, "  Character has no objects in inventory.\n");
@@ -550,14 +409,8 @@ char *filename1;
 	      (void) fprintf(file1, "%c) %s\n", i+'a', prt2);
 	    }
 	}
-#ifndef MAC
       (void) fprintf(file1, "%c", CTRL('L'));
-#endif
       (void) fclose(file1);
-#ifdef MAC
-      setfileinfo(filename1, vrefnum, INFO_FTYPE);
-      macendwait ();
-#endif
       prt("Completed.", 0, 0);
       return TRUE;
     }

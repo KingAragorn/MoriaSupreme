@@ -1,4 +1,7 @@
 build/
+web/build/
+web/dist/
+web/.cache/
 *.o
 source/moria
 source/pmoria

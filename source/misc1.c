@@ -11,27 +11,12 @@
 #include "types.h"
 #include "externs.h"
 
-#ifdef __TURBOC__
-#include	<stdlib.h>
-#endif
 
-#ifdef Pyramid
-#include <sys/time.h>
-#else
 #include <time.h>
-#endif
-#if !defined(GEMDOS) && !defined(MAC) && !defined(AMIGA)
-#ifndef VMS
 #include <sys/types.h>
-#else
-#include <types.h>
-#endif
-#endif
 
 #ifndef MORIA_POSIX
-#if !defined(ATARIST_MWC) && !defined(MAC) && !defined(VMS) && !defined(AMIGA)
 long time();
-#endif
 struct tm *localtime();
 #endif
 
@@ -47,11 +32,7 @@ int32u seed;
   register int32u clock_var;
 
   if (seed == 0)
-#ifdef MAC
-    clock_var = time((time_t *)0);
-#else
     clock_var = time((long *)0);
-#endif
   else
     clock_var = seed;
   randes_seed = (int32) clock_var;
@@ -91,14 +72,12 @@ void reset_seed()
 int check_time()
 {
 #ifdef MORIA_HOU
-  long clock_var;
+  time_t clock_var;
   register struct tm *tp;
 
-#ifdef MAC
+  /* time_t is 64-bit on wasm32, where long is 32-bit. localtime reads
+     the width of time_t, so the variable has to be a time_t. */
   clock_var = time((time_t *)0);
-#else
-  clock_var = time((long *)0);
-#endif
   tp = localtime(&clock_var);
   if (days[tp->tm_wday][tp->tm_hour+4] == 'X')
     return TRUE;
@@ -126,13 +105,6 @@ int mean, stand;
 {
   register int tmp, offset, low, iindex, high;
 
-#if 0
-  /* alternate randnor code, slower but much smaller since no table */
-  /* 2 per 1,000,000 will be > 4*SD, max is 5*SD */
-  tmp = damroll(8, 99);	 /* mean 400, SD 81 */
-  tmp = (tmp - 400) * stand / 81;
-  return tmp + mean;
-#endif
 
   tmp = randint(MAX_SHORT);
 
@@ -568,24 +540,12 @@ int y, x;
     return t_list[cave_ptr->tptr].tchar;
   else if (cave_ptr->fval <= MAX_CAVE_FLOOR)
     {
-#ifdef MSDOS
-      return floorsym;
-#else
       return '.';
-#endif
     }
   else if (cave_ptr->fval == GRANITE_WALL || cave_ptr->fval == BOUNDARY_WALL
 	   || highlight_seams == FALSE)
     {
-#ifdef MSDOS
-      return wallsym;
-#else
-#ifndef ATARI_ST
       return '#';
-#else
-      return (unsigned char)240;
-#endif
-#endif
     }
   else	/* Originally set highlight bit, but that is not portable, now use
 	   the percent sign instead. */
@@ -638,9 +598,6 @@ int compact_monsters()
   register int i;
   int cur_dis, delete_any;
   register monster_type *mon_ptr;
-#ifdef ATARIST_MWC
-  int32 holder;
-#endif
 
   msg_print("Compacting monsters...");
 
@@ -654,11 +611,7 @@ int compact_monsters()
 	  if ((cur_dis < mon_ptr->cdis) && (randint(3) == 1))
 	    {
 	      /* Never compact away the Balrog!! */
-#ifdef ATARIST_MWC
-	      if (c_list[mon_ptr->mptr].cmove & (holder = CM_WIN))
-#else
 	      if (c_list[mon_ptr->mptr].cmove & CM_WIN)
-#endif
 		/* Do nothing */
 		;
 	      /* in case this is called from within creatures(), this is a

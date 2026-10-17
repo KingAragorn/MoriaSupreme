@@ -6,11 +6,6 @@
    not for profit purposes provided that this copyright and statement are
    included in all such copies. */
 
-#ifdef __TURBOC__
-#include	<conio.h>
-#include	<stdio.h>
-#include	<stdlib.h>
-#endif /* __TURBOC__ */
  
 #include "config.h"
 #include "constant.h"
@@ -18,9 +13,7 @@
 #include "externs.h"
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#endif
 #else
 #include <strings.h>
 #endif
@@ -51,10 +44,6 @@ static void jamdoor();
 static void refill_lamp();
 #endif
 
-#ifdef ATARIST_TC
-/* Include this to get prototypes for standard library functions.  */
-#include <stdlib.h>
-#endif
 
 /* Moria game module					-RAK-	*/
 /* The code in this section has gone through many revisions, and */
@@ -70,9 +59,6 @@ void dungeon()
   register struct misc *p_ptr;
   register inven_type *i_ptr;
   register struct flags *f_ptr;
-#ifdef ATARIST_WMC
-  int32u holder;
-#endif
 
   /* Main procedure for dungeon.			-RAK-	*/
   /* Note: There is a lot of preliminary magic going on here at first*/
@@ -112,19 +98,12 @@ void dungeon()
   creatures(FALSE);
   /* Print the depth			   */
   prt_depth();
-#if 0
-  /* This can't be right.  */
-#ifdef ATARIST_MWC
-  prt_map();
-#endif
-#endif
 
   /* Loop until dead,  or new level		*/
   do
     {
       /* Increment turn counter			*/
       turn++;
-#ifndef MAC
       /* The Mac ignores the game hours file		*/
       /* Check for game hours			       */
       if (((turn % 250) == 1) && !check_time())
@@ -146,7 +125,6 @@ void dungeon()
 	    msg_print("The gates to Moria are closing.");
 	    msg_print("Please finish up or save your game.");
 	  }
-#endif
 
       /* turn over the store contents every, say, 1000 turns */
       if ((dun_level != 0) && ((turn % 1000) == 0))
@@ -260,11 +238,7 @@ void dungeon()
 	  f_ptr->blind--;
 	  if (f_ptr->blind == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_BLIND);
-#else
 	      f_ptr->status &= ~PY_BLIND;
-#endif
 	      prt_blind();
 	      prt_map();
 	      /* light creatures */
@@ -284,11 +258,7 @@ void dungeon()
 	  f_ptr->confused--;
 	  if (f_ptr->confused == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_CONFUSED);
-#else
 	      f_ptr->status &= ~PY_CONFUSED;
-#endif
 	      prt_confused();
 	      msg_print("You feel less confused now.");
 	      if (py.flags.rest != 0)
@@ -313,11 +283,7 @@ void dungeon()
 	  f_ptr->afraid--;
 	  if (f_ptr->afraid == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_FEAR);
-#else
 	      f_ptr->status &= ~PY_FEAR;
-#endif
 	      prt_afraid();
 	      msg_print("You feel bolder now.");
 	      disturb (0, 0);
@@ -334,11 +300,7 @@ void dungeon()
 	  f_ptr->poisoned--;
 	  if (f_ptr->poisoned == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_POISONED);
-#else
 	      f_ptr->status &= ~PY_POISONED;
-#endif
 	      prt_poisoned();
 	      msg_print("You feel better.");
 	      disturb (0, 0);
@@ -379,11 +341,7 @@ void dungeon()
 	  f_ptr->fast--;
 	  if (f_ptr->fast == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_FAST);
-#else
 	      f_ptr->status &= ~PY_FAST;
-#endif
 	      change_speed(1);
 	      msg_print("You feel yourself slow down.");
 	      disturb (0, 0);
@@ -402,11 +360,7 @@ void dungeon()
 	  f_ptr->slow--;
 	  if (f_ptr->slow == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_SLOW);
-#else
 	      f_ptr->status &= ~PY_SLOW;
-#endif
 	      change_speed(-1);
 	      msg_print("You feel yourself speed up.");
 	      disturb (0, 0);
@@ -429,32 +383,12 @@ void dungeon()
 	}
 
       /* Check for interrupts to find or rest. */
-#ifdef MAC
-      /* On Mac, checking for input is expensive, since it involves handling
-	 events, so we only check in multiples of 16 turns. */
-      if (!(turn & 0xF) && ((command_count > 0) || find_flag
-			     || (f_ptr->rest != 0)))
-	if (macgetkey(CNIL, TRUE))
-	  disturb(0, 0);
-#else
       if ((command_count > 0 || find_flag || f_ptr->rest != 0)
-#if defined(MSDOS) || defined(VMS)
-	  && kbhit()
-#else
 	  && (check_input (find_flag ? 0 : 10000))
-#endif
 	  )
 	{
-#ifdef MSDOS
-	  (void) msdos_getch();
-#endif
-#ifdef VMS
-	  /* Get and ignore the key used to interrupt resting/running.  */
-	  (void) vms_getch ();
-#endif
 	  disturb (0, 0);
 	}
-#endif
 
       /* Hallucinating?	 (Random characters appear!)*/
       if (f_ptr->image > 0)
@@ -493,11 +427,7 @@ void dungeon()
 	  f_ptr->invuln--;
 	  if (f_ptr->invuln == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_INVULN);
-#else
 	      f_ptr->status &= ~PY_INVULN;
-#endif
 	      disturb (0, 0);
 	      py.misc.pac -= 100;
 	      py.misc.dis_ac -= 100;
@@ -523,11 +453,7 @@ void dungeon()
 	  f_ptr->hero--;
 	  if (f_ptr->hero == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_HERO);
-#else
 	      f_ptr->status &= ~PY_HERO;
-#endif
 	      disturb (0, 0);
 	      p_ptr->mhp -= 10;
 	      if (p_ptr->chp > p_ptr->mhp)
@@ -560,11 +486,7 @@ void dungeon()
 	  f_ptr->shero--;
 	  if (f_ptr->shero == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_SHERO);
-#else
 	      f_ptr->status &= ~PY_SHERO;
-#endif
 	      disturb (0, 0);
 	      p_ptr->mhp -= 20;
 	      if (p_ptr->chp > p_ptr->mhp)
@@ -596,11 +518,7 @@ void dungeon()
 	  f_ptr->blessed--;
 	  if (f_ptr->blessed == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~(holder = PY_BLESSED);
-#else
 	      f_ptr->status &= ~PY_BLESSED;
-#endif
 	      disturb (0, 0);
 	      p_ptr->bth -= 5;
 	      p_ptr->bthb-= 5;
@@ -627,17 +545,9 @@ void dungeon()
       /* Detect Invisible      */
       if (f_ptr->detect_inv > 0)
 	{
-#ifdef ATARIST_MWC
-	  if (((holder = PY_DET_INV) & f_ptr->status) == 0)
-#else
 	  if ((PY_DET_INV & f_ptr->status) == 0)
-#endif
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status |= holder;
-#else
 	      f_ptr->status |= PY_DET_INV;
-#endif
 	      f_ptr->see_inv = TRUE;
 	      /* light but don't move creatures */
 	      creatures (FALSE);
@@ -645,11 +555,7 @@ void dungeon()
 	  f_ptr->detect_inv--;
 	  if (f_ptr->detect_inv == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~holder;
-#else
 	      f_ptr->status &= ~PY_DET_INV;
-#endif
 	      /* may still be able to see_inv if wearing magic item */
 	      calc_bonuses();
 	      /* unlight but don't move creatures */
@@ -659,17 +565,9 @@ void dungeon()
       /* Timed infra-vision    */
       if (f_ptr->tim_infra > 0)
 	{
-#ifdef ATARIST_MWC
-	  if (((holder = PY_TIM_INFRA) & f_ptr->status) == 0)
-#else
 	  if ((PY_TIM_INFRA & f_ptr->status) == 0)
-#endif
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status |= holder;
-#else
 	      f_ptr->status |= PY_TIM_INFRA;
-#endif
 	      f_ptr->see_infra++;
 	      /* light but don't move creatures */
 	      creatures (FALSE);
@@ -677,11 +575,7 @@ void dungeon()
 	  f_ptr->tim_infra--;
 	  if (f_ptr->tim_infra == 0)
 	    {
-#ifdef ATARIST_MWC
-	      f_ptr->status &= ~holder;
-#else
 	      f_ptr->status &= ~PY_TIM_INFRA;
-#endif
 	      f_ptr->see_infra--;
 	      /* unlight but don't move creatures */
 	      creatures (FALSE);
@@ -716,111 +610,50 @@ void dungeon()
 	}
 
       /* See if we are too weak to handle the weapon or pack.  -CJS- */
-#ifdef ATARIST_MWC
-      if (py.flags.status & (holder = PY_STR_WGT))
-#else
       if (py.flags.status & PY_STR_WGT)
-#endif
 	check_strength();
       if (py.flags.status & PY_STUDY)
 	prt_study();
-#ifdef ATARIST_MWC
-      if (py.flags.status & (holder = PY_SPEED))
-#else
       if (py.flags.status & PY_SPEED)
-#endif
 	{
-#ifdef ATARIST_MWC
-	  py.flags.status &= ~holder;
-#else
 	  py.flags.status &= ~PY_SPEED;
-#endif
 	  prt_speed();
 	}
-#ifdef ATARIST_MWC
-      if ((py.flags.status & (holder = PY_PARALYSED))
-	  && (py.flags.paralysis < 1))
-#else
       if ((py.flags.status & PY_PARALYSED) && (py.flags.paralysis < 1))
-#endif
 	{
 	  prt_state();
-#ifdef ATARIST_MWC
-	  py.flags.status &= ~holder;
-#else
 	  py.flags.status &= ~PY_PARALYSED;
-#endif
 	}
       else if (py.flags.paralysis > 0)
 	{
 	  prt_state();
-#ifdef ATARIST_MWC
-	  py.flags.status |= (holder = PY_PARALYSED);
-#else
 	  py.flags.status |= PY_PARALYSED;
-#endif
 	}
       else if (py.flags.rest != 0)
 	prt_state();
 
-#ifdef ATARIST_MWC
-      if ((py.flags.status & (holder = PY_ARMOR)) != 0)
-#else
       if ((py.flags.status & PY_ARMOR) != 0)
-#endif
 	{
 	  prt_pac();
-#ifdef ATARIST_MWC
-	  py.flags.status &= ~holder;
-#else
 	  py.flags.status &= ~PY_ARMOR;
-#endif
 	}
-#ifdef ATARIST_MWC
-      if ((py.flags.status & (holder = PY_STATS)) != 0)
-#else
       if ((py.flags.status & PY_STATS) != 0)
-#endif
 	{
 	  for (i = 0; i < 6; i++)
-#ifdef ATARIST_MWC
-	    if (((holder = PY_STR) << i) & py.flags.status)
-#else
 	    if ((PY_STR << i) & py.flags.status)
-#endif
 	      prt_stat(i);
-#ifdef ATARIST_MWC
-	  py.flags.status &= ~(holder = PY_STATS);
-#else
 	  py.flags.status &= ~PY_STATS;
-#endif
 	}
-#ifdef ATARIST_MWC
-      if (py.flags.status & (holder = PY_HP))
-#else
       if (py.flags.status & PY_HP)
-#endif
 	{
 	  prt_mhp();
 	  prt_chp();
-#ifdef ATARIST_MWC
-	  py.flags.status &= ~holder;
-#else
 	  py.flags.status &= ~PY_HP;
-#endif
 	}
-#ifdef ATARIST_MWC
-      if (py.flags.status & (holder = PY_MANA))
-#else
       if (py.flags.status & PY_MANA)
-#endif
 	{
 	  prt_cmana();
-#ifdef ATARIST_MWC
-	  py.flags.status &= ~holder;
-#else
 	  py.flags.status &= ~PY_MANA;
-#endif
 	}
 
       /* Allow for a slim chance of detect enchantment -CJS- */
@@ -868,11 +701,7 @@ void dungeon()
 	{
 	  do
 	    {
-#ifdef ATARIST_MWC
-	      if (py.flags.status & (holder = PY_REPEAT))
-#else
 	      if (py.flags.status & PY_REPEAT)
-#endif
 		prt_state ();
 	      default_dir = FALSE;
 	      free_turn_flag = FALSE;
@@ -899,14 +728,7 @@ void dungeon()
 		  else
 		    {
 		      msg_flag = FALSE;
-#ifdef MAC
-		      unloadsegments();
-		      enablesavecmd(TRUE);
-		      command = inkeydir();
-		      enablesavecmd(FALSE);
-#else
 		      command = inkey();
-#endif
 		      i = 0;
 		      /* Get a count for a command. */
 		      if ((rogue_like_commands
@@ -940,11 +762,7 @@ void dungeon()
 				}
 			      else
 				break;
-#ifdef MAC
-			      command = inkeydir();
-#else
 			      command = inkey();
-#endif
 			    }
 			  if (i == 0)
 			    {
@@ -956,11 +774,7 @@ void dungeon()
 			  if (command == ' ')
 			    {
 			      prt ("Command:", 0, 20);
-#ifdef MAC
-			      command = inkeydir();
-#else
 			      command = inkey();
-#endif
 			    }
 			}
 		      /* Another way of typing control codes -CJS- */
@@ -1341,13 +1155,8 @@ char com_val;
 	{
 	  (void) strcpy (died_from, "(saved)");
 	  msg_print ("Saving game...");
-#ifdef MAC
-	  if (save_char (TRUE))
-	    exit_game();
-#else
 	  if (save_char ())
 	    exit_game();
-#endif
 	  (void) strcpy (died_from, "(alive and well)");
 	}
       free_turn_flag = TRUE;
@@ -1364,11 +1173,7 @@ char com_val;
       break;
     case '!':		/* (!) escape to the shell */
     case '$':
-#ifdef SECURE
-      msg_print("Sorry, inferior shells are not allowed from Moria.");
-#else
       shell_out();
-#endif
       free_turn_flag = TRUE;
       break;
     case 's':           /* (s)hoot an arrow from quiver slot */
@@ -1939,16 +1744,9 @@ int percent;
 static int enchanted (t_ptr)
 register inven_type *t_ptr;
 {
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   if (t_ptr->tval < TV_MIN_ENCHANT || t_ptr->tval > TV_MAX_ENCHANT
-#ifdef ATARIST_MWC
-      || t_ptr->flags & (holder = TR_CURSED))
-#else
       || t_ptr->flags & TR_CURSED)
-#endif
     return FALSE;
   if (known2_p(t_ptr))
     return FALSE;

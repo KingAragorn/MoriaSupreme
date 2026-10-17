@@ -6,9 +6,6 @@
    not for profit purposes provided that this copyright and statement are
    included in all such copies. */
 
-#ifdef __TURBOC__
-#include	<stdio.h>
-#endif
 
 #include "config.h"
 #include "constant.h"
@@ -21,9 +18,7 @@
 #endif
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#endif
 #else
 #include <strings.h>
 #endif

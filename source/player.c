@@ -20,9 +20,6 @@ int16 char_col;
 int16u player_hp[MAX_PLAYER_LEVEL];
 
 /* Class titles for different levels				*/
-#ifdef MACGAME
-char *(*player_title)[MAX_PLAYER_LEVEL];
-#else
 char *player_title[MAX_CLASS][MAX_PLAYER_LEVEL] = {
 	/* Warrior	 */
 {"Rookie","Private","Soldier","Mercenary","Veteran(1st)","Veteran(2nd)",
@@ -174,7 +171,6 @@ char *player_title[MAX_CLASS][MAX_PLAYER_LEVEL] = {
  "Ruin Captain","Free Captain","Master Delver","Master Wanderer","Legend Seeker",
  "World Walker","Paragon","Myth Walker","Free Legend","Supreme Adventurer"}
 };
-#endif
 
 /* Base experience levels, may be adjusted up for race and/or class*/
 int32u player_exp[MAX_PLAYER_LEVEL] = {
@@ -189,9 +185,6 @@ int32u player_exp[MAX_PLAYER_LEVEL] = {
 	Ages, heights, and weights (male then female)
 	Racial Bases for: dis,srh,stl,fos,bth,bthb,bsav,hitdie,
 	infra, exp base, choice-classes */
-#ifdef MACGAME
-race_type *race;
-#else
 
 /* Note:  Race descriptor text starts at ((race-1)*3)+1 in the array */
 
@@ -263,12 +256,8 @@ race_type race[MAX_RACES] = {
       -5,  5,  0,  0,  0
    }
  };
-#endif
 
 /* Background information					*/
-#ifdef MACGAME
-background_type *background;
-#else
 background_type background[MAX_BACKGROUND] = {
 {"You are the illegitimate and unacknowledged child ",		 10, 1, 2, 25},
 {"You are the illegitimate but acknowledged child ",		 20, 1, 2, 35},
@@ -421,7 +410,6 @@ background_type background[MAX_BACKGROUND] = {
 {"with only the trees for company.  ",				100,35,36, 55},
 {"The leaves still answer when you call.  ",			100,36, 0, 60}
 };
-#endif
 
 /* Classes.							*/
 class_type class[MAX_CLASS] = {
@@ -481,9 +469,6 @@ int8u spell_order[32];		/* order spells learned/remembered/forgotten */
 /* Warriors don't have spells, so there is no entry for them.  Note that
    this means you must always subtract one from the py.misc.pclass before
    indexing into magic_spell[]. */
-#ifdef MACGAME
-spell_type (*magic_spell)[31];
-#else
 spell_type magic_spell[MAX_CLASS-1][31] = {
   {		  /* Mage	   */
      {	1,  1, 22,   1},
@@ -980,7 +965,6 @@ spell_type magic_spell[MAX_CLASS-1][31] = {
      { 99, 99, 99,   0},
    },
  };
-#endif
 
 char *spell_names[100] = {
   /* Mage Spells */

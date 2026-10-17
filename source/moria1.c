@@ -6,9 +6,6 @@
    not for profit purposes provided that this copyright and statement are
    included in all such copies. */
 
-#ifdef __TURBOC__
-#include	<stdlib.h>
-#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -19,12 +16,7 @@
 #include "externs.h"
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#else
-char *strcat();
-int strlen();
-#endif
 #else
 #include <strings.h>
 #endif
@@ -36,10 +28,6 @@ static void sub1_move_light(int, int, int, int);
 static void sub3_move_light(int, int, int, int);
 #endif
 
-#ifdef ATARIST_TC
-/* Include this to get prototypes for standard library functions.  */
-#include <stdlib.h>
-#endif
 
 /* Changes speed of monsters relative to player		-RAK-	*/
 /* Note: When the player is sped up or slowed down, I simply	 */
@@ -49,16 +37,9 @@ void change_speed(num)
 register int num;
 {
   register int i;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   py.flags.speed += num;
-#ifdef ATARIST_MWC
-  py.flags.status |= (holder = PY_SPEED);
-#else
   py.flags.status |= PY_SPEED;
-#endif
   for (i = mfptr - 1; i >= MIN_MONIX; i--)
       m_list[i].cspeed += num;
 }
@@ -74,9 +55,6 @@ register inven_type *t_ptr;
 register int factor;
 {
   register int i, amount;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   amount = t_ptr->p1 * factor;
   if (t_ptr->flags & TR_STATS)
@@ -94,30 +72,18 @@ register int factor;
     py.misc.stl += amount;
   if (TR_SPEED & t_ptr->flags)
     change_speed(-amount);
-#ifdef ATARIST_MWC
-  if (((holder = TR_BLIND) & t_ptr->flags) && (factor > 0))
-    py.flags.blind += 1000;
-  if (((holder = TR_TIMID) & t_ptr->flags) && (factor > 0))
-    py.flags.afraid += 50;
-  if ((holder = TR_INFRA) & t_ptr->flags)
-    py.flags.see_infra += amount;
-#else
   if ((TR_BLIND & t_ptr->flags) && (factor > 0))
     py.flags.blind += 1000;
   if ((TR_TIMID & t_ptr->flags) && (factor > 0))
     py.flags.afraid += 50;
   if (TR_INFRA & t_ptr->flags)
     py.flags.see_infra += amount;
-#endif
 }
 
 /* Recalculate the effect of all the stuff we use.		  -CJS- */
 void calc_bonuses()
 {
   register int32u item_flags;
-#if defined(ATARIST_MWC)
-  int32u holder;		/* to avoid a compiler bug */
-#endif
   int old_dis_ac,plus_ac,plus_tohit,plus_todam;
   register struct flags *p_ptr;
   register struct misc *m_ptr;
@@ -240,11 +206,7 @@ void calc_bonuses()
 
   /* can't print AC here because might be in a store */
   if (old_dis_ac != m_ptr->dis_ac)
-#ifdef ATARIST_MWC
-    p_ptr->status |= (holder = PY_ARMOR);
-#else
     p_ptr->status |= PY_ARMOR;
-#endif
 
   item_flags = 0;
   i_ptr = &inventory[INVEN_WIELD];
@@ -253,7 +215,6 @@ void calc_bonuses()
       item_flags |= i_ptr->flags;
       i_ptr++;
     }
-#if !defined(ATARIST_MWC)
   if (TR_SLOW_DIGEST & item_flags)
     p_ptr->slow_digest = TRUE;
   if (TR_AGGRAVATE & item_flags)
@@ -276,51 +237,11 @@ void calc_bonuses()
     p_ptr->lght_resist = TRUE;
   if (TR_FFALL & item_flags)
     p_ptr->ffall = TRUE;
-#else
-  /* this avoids a bug in the Mark Williams C compiler for the Atari ST */
-  holder = TR_SLOW_DIGEST;
-  if (holder & item_flags)
-    p_ptr->slow_digest = TRUE;
-  holder = TR_AGGRAVATE;
-  if (holder & item_flags)
-    p_ptr->aggravate = TRUE;
-  holder = TR_TELEPORT;
-  if (holder & item_flags)
-    p_ptr->teleport = TRUE;
-  holder = TR_REGEN;
-  if (holder & item_flags)
-    p_ptr->regenerate = TRUE;
-  holder = TR_RES_FIRE;
-  if (holder & item_flags)
-    p_ptr->fire_resist = TRUE;
-  holder = TR_RES_ACID;
-  if (holder & item_flags)
-    p_ptr->acid_resist = TRUE;
-  holder = TR_RES_COLD;
-  if (holder & item_flags)
-    p_ptr->cold_resist = TRUE;
-  holder = TR_FREE_ACT;
-  if (holder & item_flags)
-    p_ptr->free_act = TRUE;
-  holder = TR_SEE_INVIS;
-  if (holder & item_flags)
-    p_ptr->see_inv = TRUE;
-  holder = TR_RES_LIGHT;
-  if (holder & item_flags)
-    p_ptr->lght_resist = TRUE;
-  holder = TR_FFALL;
-  if (holder & item_flags)
-    p_ptr->ffall = TRUE;
-#endif
 
   i_ptr = &inventory[INVEN_WIELD];
   for (i = INVEN_WIELD; i < INVEN_LIGHT; i++)
     {
-#ifdef ATARIST_MWC
-      if ((holder = TR_SUST_STAT) & i_ptr->flags)
-#else
       if (TR_SUST_STAT & i_ptr->flags)
-#endif
 	switch(i_ptr->p1)
 	  {
 	  case 1: p_ptr->sustain_str = TRUE; break;
@@ -552,18 +473,11 @@ int item_val, posn;
   register char *p;
   bigvtype out_val, prt2;
   register inven_type *t_ptr;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   equip_ctr--;
   t_ptr = &inventory[item_val];
   inven_weight -= t_ptr->weight*t_ptr->number;
-#ifdef ATARIST_MWC
-  py.flags.status |= (holder = PY_STR_WGT);
-#else
   py.flags.status |= PY_STR_WGT;
-#endif
 
   if (item_val == INVEN_WIELD || item_val == INVEN_AUX)
     p = "Was wielding ";
@@ -702,9 +616,6 @@ char command;
   bigvtype prt1, prt2;
   register inven_type *i_ptr;
   inven_type tmp_obj;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   free_turn_flag = TRUE;
   save_screen();
@@ -811,11 +722,7 @@ char command;
 	  if (inventory[INVEN_WIELD].tval == TV_NOTHING &&
 	      inventory[INVEN_AUX].tval == TV_NOTHING)
 	    msg_print("But you are wielding no weapons.");
-#ifdef ATARIST_MWC
-	  else if ((holder = TR_CURSED) & inventory[INVEN_WIELD].flags)
-#else
 	  else if (TR_CURSED & inventory[INVEN_WIELD].flags)
-#endif
 	    {
 	      objdes(prt1, &inventory[INVEN_WIELD], FALSE);
 	      (void) sprintf(prt2,
@@ -959,11 +866,7 @@ char command;
 		      while (tmp >= 0);
 		      if (isupper((int)which) && !verify(prompt, item))
 			item = -1;
-#ifdef ATARIST_MWC
-		      else if ((holder = TR_CURSED) & inventory[item].flags)
-#else
 		      else if (TR_CURSED & inventory[item].flags)
-#endif
 			{
 			  msg_print("Hmmm, it seems to be cursed.");
 			  item = -1;
@@ -1096,11 +999,7 @@ char command;
 			   }
 		      if (item >= 0 && inventory[slot].tval != TV_NOTHING)
 			{
-#ifdef ATARIST_MWC
-			  if ((holder = TR_CURSED) & inventory[slot].flags)
-#else
 			  if (TR_CURSED & inventory[slot].flags)
-#endif
 			    {
 			      objdes(prt1, &inventory[slot], FALSE);
 			      (void) sprintf(prt2, "The %s you are ", prt1);
@@ -1181,11 +1080,7 @@ char command;
 			  if (slot == INVEN_WIELD)
 			    weapon_heavy = FALSE;
 			  check_strength();
-#ifdef ATARIST_MWC
-			  if (i_ptr->flags & (holder = TR_CURSED))
-#else
 			  if (i_ptr->flags & TR_CURSED)
-#endif
 			    {
 			      msg_print("Oops! It feels deathly cold!");
 			      add_inscribe(i_ptr, ID_DAMD);
@@ -1546,11 +1441,7 @@ int *dir;
   for (;;)
     {
       save = command_count;	/* Don't end a counted command. -CJS- */
-#ifdef MAC
-      if (!get_comdir(prompt, &command))
-#else
       if (!get_com(prompt, &command))
-#endif
 	{
 	  free_turn_flag = TRUE;
 	  return FALSE;
@@ -1580,11 +1471,7 @@ int *dir;
 
   for(;;)
     {
-#ifdef MAC
-      if (!get_comdir(prompt, &command))
-#else
       if (!get_com(prompt, &command))
-#endif
 	{
 	  free_turn_flag = TRUE;
 	  return FALSE;
@@ -1794,17 +1681,10 @@ void search_on()
 
 void search_off()
 {
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   check_view();
   change_speed(-1);
-#ifdef ATARIST_MWC
-  py.flags.status &= ~(holder = PY_SEARCH);
-#else
   py.flags.status &= ~PY_SEARCH;
-#endif
   prt_state();
   prt_speed();
   py.flags.food_digested--;
@@ -1859,16 +1739,9 @@ void rest()
 
 void rest_off()
 {
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   py.flags.rest = 0;
-#ifdef ATARIST_MWC
-  py.flags.status &= ~(holder = PY_REST);
-#else
   py.flags.status &= ~PY_REST;
-#endif
   prt_state();
   msg_print(CNIL); /* flush last message, or delete "press any key" message */
   py.flags.food_digested++;
