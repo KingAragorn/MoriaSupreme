@@ -315,12 +315,19 @@ umoria.");
 #endif
 	      )
 	    {
-	      (void) sprintf(string,
+	      /* A misaligned record can carry a race or class past the
+		 tables. Skip it instead of walking off them. */
+	      if (score.race < MAX_RACES && score.class < MAX_CLASS)
+		{
+		  score.name[PLAYER_NAME_SIZE - 1] = '\0';
+		  score.died_from[24] = '\0';
+		  (void) sprintf(string,
 			   "%-4d%8ld %-19.19s %c %-10.10s %-7.7s%3d %-22.22s",
 			     rank, score.points, score.name, score.sex,
 			     race[score.race].trace, class[score.class].title,
 			     score.lev, score.died_from);
-	      prt(string, ++i, 0);
+		  prt(string, ++i, 0);
+		}
 	    }
 	  rank++;
 	  rd_highscore(&score);
@@ -614,6 +621,10 @@ static void highscores()
 
   clear_screen();
 
+  /* The name and died_from arrays are written in full. Clear them so the
+     bytes after the terminating NUL are not leftover stack contents. */
+  (void) memset ((char *)&new_entry, 0, sizeof (new_entry));
+
   if (noscore)
     return;
 
@@ -799,16 +810,12 @@ are not saved.");
 #ifdef ATARIST_TC || defined(__TURBOC__)
 	  /* No fseek with negative offset allowed.  */
 	  (void) fseek(highscore_fp, (long)ftell(highscore_fp) -
-		       sizeof(high_scores) - sizeof (char), L_SET);
+		       SCORE_REC_SIZE, L_SET);
 #else
-	  (void) fseek(highscore_fp,
-		       -(long)sizeof(high_scores)-(long)sizeof(char),
-		       L_INCR);
+	  (void) fseek(highscore_fp, -(long)SCORE_REC_SIZE, L_INCR);
 #endif
 #else
-	  (void) fseek(highscore_fp,
-		       -(off_t)sizeof(high_scores)-(off_t)sizeof(char),
-		       L_INCR);
+	  (void) fseek(highscore_fp, -(off_t)SCORE_REC_SIZE, L_INCR);
 #endif
 	  wr_highscore(&entry);
 	  /* under unix and VMS, only allow one sex/race/class combo per

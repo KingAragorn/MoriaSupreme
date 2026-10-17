@@ -641,3 +641,9 @@ some of the system defines set up there.
 
 /* Number of entries allowed in the scorefile.  */
 #define SCOREFILE_SIZE	1000
+
+/* Bytes written by wr_highscore(), including the leading encryption byte.
+   Not sizeof(high_scores): the file stores 32-bit points and birth dates,
+   while int32 is a long. On LP64 that makes the struct 8 bytes larger, and
+   seeking by sizeof overlapped the following score record. */
+#define SCORE_REC_SIZE	73

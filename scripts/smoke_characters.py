@@ -143,7 +143,7 @@ def clone_screen(screen):
                 data=cell.data, fg=cell.fg, bg=cell.bg,
                 bold=cell.bold, italics=cell.italics,
                 underscore=cell.underscore, strikethrough=cell.strikethrough,
-                reverse=cell.reverse, blink=cell.blink,
+                reverse=cell.reverse,
             )
     return cloned
 
@@ -234,7 +234,8 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
         if shots is not None:
             shots["play"] = clone_screen(session.screen)
         session.send("\x18")
-        end = time.time() + 8
+        # The USG flock stand-in keeps a lock for up to 10 seconds.
+        end = time.time() + 20
         while time.time() < end and session.proc.poll() is None:
             session.pump(0.15)
             text = session.text()
@@ -276,11 +277,16 @@ def main():
         )
         label = "%s %s" % (race, title)
         if ok:
-            print("ok  %s" % label)
+            print("ok  %s" % label, flush=True)
             if want_shots:
                 os.makedirs(args.shots, exist_ok=True)
-                render_png(shots["sheet"], os.path.join(args.shots, "character.png"))
-                render_png(shots["play"], os.path.join(args.shots, "gameplay.png"))
+                try:
+                    render_png(shots["sheet"], os.path.join(args.shots, "character.png"))
+                    render_png(shots["play"], os.path.join(args.shots, "gameplay.png"))
+                except ImportError as exc:
+                    failures.append((label, "screenshot renderer missing: %s" % exc))
+                    print("FAIL %s: screenshot renderer missing: %s" % (label, exc))
+                    continue
                 colored = 0
                 for y in range(1, ROWS - 1):
                     for x in range(13, COLS):
