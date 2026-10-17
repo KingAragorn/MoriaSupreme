@@ -951,7 +951,35 @@ treasure_type object_list[MAX_OBJECTS] = {
 {"& ruined chest"		,0x00000000L,   TV_CHEST, '&',	/* 425 */
    0,	   0,	0,   1, 250,	0,   0,	 0,   0, {0,0}	,  0},
 {""				,0x00000000L,  TV_NOTHING, ' ',	/* 426 */
-   0,       0,   0,   0,   0,   0,   0,   0,   0, {0,0}  ,  0}
+   0,       0,   0,   0,   0,   0,   0,   0,   0, {0,0}  ,  0},
+/* Town services. Doors use subval as the hit_trap case. */
+{"adventurers' hall"		,0x00000000L, TV_STORE_DOOR, '7',/* 427 */
+    0,	   0, 107,   1,   0,	0,   0,	 0,   0, {0,0}	,  0},
+{"bank"				,0x00000000L, TV_STORE_DOOR, '8',/* 428 */
+    0,	   0, 108,   1,   0,	0,   0,	 0,   0, {0,0}	,  0},
+{"notice board"			,0x00000000L, TV_STORE_DOOR, '?',/* 429 */
+    0,	   0, 109,   1,   0,	0,   0,	 0,   0, {0,0}	,  0},
+{"stone wall"			,0x00000000L, TV_STORE_DOOR, '#',/* 430 */
+    0,	   0, 110,   1,   0,	0,   0,	 0,   0, {0,0}	,  0},
+/* Bard instruments. p1 is how much a song's failure drops. */
+{"flute"			,0x00000000L, TV_INSTRUMENT, '|',/* 431 */
+    8,	  40,	1,   1,   5,	0,   0,	 0,   0, {0,0}	,  1},
+{"lute"				,0x00000000L, TV_INSTRUMENT, '|',/* 432 */
+   14,	 120,	2,   1,  15,	0,   0,	 0,   0, {0,0}	,  3},
+{"harp"				,0x00000000L, TV_INSTRUMENT, '|',/* 433 */
+   20,	 400,	3,   1,  40,	0,   0,	 0,   0, {0,0}	,  8},
+/* Trade bars. Face value is cost. The bank, not the shops, changes them. */
+{"& copper trade bar~"		,0x00000000L, TV_METAL, '~',	/* 434 */
+    0,	  50,	70,   1,  20,	0,   0,	 0,   0, {0,0}	,  1},
+{"& silver trade bar~"		,0x00000000L, TV_METAL, '~',	/* 435 */
+    0,	 200,	71,   1,  20,	0,   0,	 0,   0, {0,0}	,  1},
+{"& gold trade bar~"		,0x00000000L, TV_METAL, '~',	/* 436 */
+    0,	1000,	72,   1,  30,	0,   0,	 0,   0, {0,0}	,  1},
+{"& mithril trade bar~"		,0x00000000L, TV_METAL, '~',	/* 437 */
+    0,	5000,	73,   1,  40,	0,   0,	 0,   0, {0,0}	,  1},
+/* Druid grove book. subval 80 so a mage's book scan can skip it. */
+{"[Grove Workings]"		,0x000000FFL, TV_MAGIC_BOOK, '?',/* 438 */
+    0,	  80,	80,   1,  30,	0,   0,	 0,   0, {1,1}	,  1}
 };
 #endif
 

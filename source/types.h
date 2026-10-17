@@ -243,6 +243,17 @@ typedef struct spell_type
   int8u sexp;	/* 1/4 of exp gained for learning spell */
 } spell_type;
 
+/* One notice-board job. kind is QUEST_KILL or QUEST_FETCH. target is a
+   creature index or an object index. */
+typedef struct town_quest_type
+{
+  int8u kind;
+  int16 target;
+  int8u need;
+  int8u have;
+  int8u done;
+} town_quest_type;
+
 typedef struct race_type
 {
   char	*trace;		/* Type of race			*/

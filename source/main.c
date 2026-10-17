@@ -410,6 +410,8 @@ char *argv[];
   prt_stat_block();
   if (generate)
     generate_cave();
+  else if (dun_level == 0)
+    place_town_services();
 
   /* Loop till dead, or exit			*/
   while(!death)

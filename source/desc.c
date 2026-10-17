@@ -346,6 +346,7 @@ int pref;
     {
     case  TV_MISC:
     case  TV_CHEST:
+    case  TV_METAL:
       break;
     case  TV_SLING_AMMO:
     case  TV_BOLT:
@@ -518,6 +519,14 @@ int pref;
       (void) strcat(out_val, ".");
       return;
     case TV_STORE_DOOR:
+      if (i_ptr->subval == 110)
+	{
+	  if (town_sneak_p())
+	    (void) strcpy(out_val, "the entrance to the guild.");
+	  else
+	    (void) strcpy(out_val, "a stone wall.");
+	  return;
+	}
       (void) sprintf(out_val, "the entrance to the %s.",
 		     object_list[i_ptr->index].name);
       return;

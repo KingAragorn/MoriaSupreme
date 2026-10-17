@@ -1097,6 +1097,8 @@ int store_num;
       exit_flag = FALSE;
       cur_top = 0;
       display_store(store_num, cur_top);
+      if (store_num == 3)
+	town_temple_notice();
       do
 	{
 	  move_cursor (20, 9);
@@ -1143,6 +1145,12 @@ int store_num;
 		  break;
 		case 's':
 		  exit_flag = store_sell(store_num, &cur_top);
+		  break;
+		case 'D':
+		  if (store_num == 3)
+		    town_dedicate();
+		  else
+		    bell();
 		  break;
 		default:
 		  bell();

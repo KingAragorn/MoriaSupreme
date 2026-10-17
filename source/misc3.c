@@ -342,7 +342,7 @@ int stat;
 
 /* Adjustment for charisma				-RAK-	*/
 /* Percent decrease or increase in price of goods		 */
-int chr_adj()
+static int chr_adj_raw()
 {
   register int charisma;
 
@@ -378,6 +378,17 @@ int chr_adj()
       case 3:  return(130);
       default: return(100);
       }
+}
+
+int chr_adj()
+{
+  register int adj;
+
+  adj = chr_adj_raw();
+  /* The Nameless Deep makes shopkeepers charge more. Added once. */
+  if (town_patron == PATRON_DEEP)
+    adj += 6;
+  return adj;
 }
 
 
@@ -1487,6 +1498,8 @@ int spell;
     chance += 5 * (s_ptr->smana-py.misc.cmana);
   if (too_bulky())
    chance += too_bulky();
+  if (py.misc.pclass == CLASS_BARD)
+    chance += town_bard_fail();
   if (chance > 95)
     chance = 95;
   else if (chance < 5)
@@ -1831,6 +1844,8 @@ void gain_spells()
       msg_print("You are too confused.");
       return;
     }
+  if (town_grove_offer())
+    return;
 
   new_spells = py.flags.new_spells;
   diff_spells = 0;
@@ -1889,7 +1904,8 @@ void gain_spells()
 	{
 	  spell_flag = 0;
 	  for (i = 0; i < inven_ctr; i++)
-	    if ((inventory[i].tval == TV_MAGIC_BOOK && stat == A_INT) ||
+	    if (((inventory[i].tval == TV_MAGIC_BOOK && stat == A_INT
+		  && inventory[i].subval != GROVE_BOOK_SUBVAL)) ||
                 (inventory[i].tval == TV_SAGE_BOOK && stat == A_DEX))
 	      spell_flag |= inventory[i].flags;
 	}

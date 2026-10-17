@@ -81,6 +81,8 @@ static void rd_string(char *);
 static void rd_shorts(int16u *, int);
 static void rd_item(inven_type *);
 static void rd_monster(monster_type *);
+static void wr_town_life(void);
+static void rd_town_life(void);
 #else
 static int sv_write();
 static void wr_byte();
@@ -99,6 +101,8 @@ static void rd_string();
 static void rd_shorts();
 static void rd_item();
 static void rd_monster();
+static void wr_town_life();
+static void rd_town_life();
 #endif
 
 #ifndef MORIA_POSIX
@@ -355,6 +359,10 @@ static int sv_write()
 
   /* starting with 5.2.2, put the birth_date in the savefile */
   wr_long ((int32u) birth_date);
+
+  /* Patch 1 trailer. Patch 0 readers stop at birth_date, so this is
+     appended and never inserted into the prefix. */
+  wr_town_life();
 
   /* only level specific info follows, this allows characters to be
      resurrected, the dungeon level info is not needed for a resurrection */
@@ -786,6 +794,9 @@ int *generate;
 	  goto error;
 	}
 
+      /* A patch 0 save has no trailer. Clear it before the old bytes load. */
+      town_clear();
+
       rd_short(&int16u_tmp);
       while (int16u_tmp != 0xFFFF)
 	{
@@ -1036,6 +1047,11 @@ int *generate;
 	    birth_date = time((long *)0);
 #endif
 	}
+      /* Only Moria Supreme 0.9 patch 1 (and later) stores the trailer.
+	 Umoria saves and patch 0 saves end at birth_date. */
+      if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
+	  && patch_level >= 1)
+	rd_town_life();
       if ((c = getc(fileptr)) == EOF || (l & 0x80000000L))
 	{
 	  if ((l & 0x80000000L) == 0)
@@ -1321,6 +1337,52 @@ int16u s;
   xor_byte ^= ((s >> 8) & 0xFF);
   (void) putc((int)xor_byte, fileptr);
   DEBUG(fprintf (logfile, " %02X = %d\n", (int) xor_byte, (int) s));
+}
+
+/* Patron, bank balance, druid grove mask, and two notice-board jobs.
+   Fixed layout, written with the same xor stream as the rest of the file. */
+static void wr_town_life()
+{
+  int i;
+
+  wr_byte(town_patron);
+  wr_long((int32u)bank_gold);
+  wr_long(spell_learned2);
+  wr_long(spell_worked2);
+  for (i = 0; i < TOWN_QUESTS; i++)
+    {
+      wr_byte(town_quests[i].kind);
+      wr_short((int16u)town_quests[i].target);
+      wr_byte(town_quests[i].need);
+      wr_byte(town_quests[i].have);
+      wr_byte(town_quests[i].done);
+    }
+}
+
+static void rd_town_life()
+{
+  int i;
+  int32u l;
+  int16u s;
+
+  rd_byte(&town_patron);
+  rd_long(&l);
+  bank_gold = (int32)l;
+  rd_long(&spell_learned2);
+  rd_long(&spell_worked2);
+  for (i = 0; i < TOWN_QUESTS; i++)
+    {
+      rd_byte(&town_quests[i].kind);
+      rd_short(&s);
+      town_quests[i].target = (int16)s;
+      rd_byte(&town_quests[i].need);
+      rd_byte(&town_quests[i].have);
+      rd_byte(&town_quests[i].done);
+    }
+  if (town_patron > PATRON_DEEP)
+    town_patron = PATRON_NONE;
+  if (bank_gold < 0)
+    bank_gold = 0;
 }
 
 static void wr_long(l)

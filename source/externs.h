@@ -149,6 +149,11 @@ extern char *spell_names[62];
 extern int32u spell_learned;	/* Bit field for spells learnt -CJS- */
 extern int32u spell_worked;	/* Bit field for spells tried -CJS- */
 extern int32u spell_forgotten;	/* Bit field for spells forgotten -JEW- */
+extern int32u spell_learned2;	/* Druid grove workings, patch 1 trailer */
+extern int32u spell_worked2;
+extern int8u town_patron;	/* PATRON_* , 0 if undedicated */
+extern int32 bank_gold;
+extern town_quest_type town_quests[TOWN_QUESTS];
 extern int8u spell_order[32];	/* remember order that spells are learned in */
 extern int16u player_init[MAX_CLASS][5];
 extern int16 total_winner;
@@ -734,6 +739,22 @@ void updatebargain(int, int32, int32);
 /* store2.c */
 void enter_store(int);
 
+/* townlife.c */
+void town_clear(void);
+void place_town_services(void);
+void town_enter_hall(void);
+void town_enter_bank(void);
+void town_enter_board(void);
+void town_try_hidden(void);
+void town_temple_notice(void);
+void town_dedicate(void);
+void town_note_kill(int);
+int town_bard_fail(void);
+void town_bard_played(void);
+int town_grove_offer(void);
+void town_cast_grove(void);
+int town_sneak_p(void);
+
 /* treasur1.c */
 
 /* treasur2.c */
@@ -1249,6 +1270,22 @@ void updatebargain();
 
 /* store2.c */
 void enter_store();
+
+/* townlife.c */
+void town_clear();
+void place_town_services();
+void town_enter_hall();
+void town_enter_bank();
+void town_enter_board();
+void town_try_hidden();
+void town_temple_notice();
+void town_dedicate();
+void town_note_kill();
+int town_bard_fail();
+void town_bard_played();
+int town_grove_offer();
+void town_cast_grove();
+int town_sneak_p();
 
 /* treasur1.c */
 

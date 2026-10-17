@@ -76,19 +76,19 @@ A public page that names Phraint, Adventurer, or a second ranger as Imoria roste
 | Kind | Name | Status | Notes |
 | --- | --- | --- | --- |
 | Race | Dryad | included | Clean-room. Str -2, Int +1, Wis +2, Dex +1, Con -1, Chr +3. Hit die 8, +20% experience, 20 feet of infravision, a little cold resistance and a little fire weakness. Quiet and perceptive, poor in a straight fight. Allowed: mage, priest, rogue, ranger, sage, jester, healer, wizard, druid, bard, adventurer. Refused: warrior, paladin, demigod, ninja, monk. |
-| Class | Druid | included | Clean-room, one prayer book. Healing, food, light, and sensing come early. Turn undead, dispel evil, and holy shield come late and fail more often. Hit-die bonus +3, experience +25%, first spells at level 1. Wisdom is the casting stat, as for every priest-realm class. Will not equip metal body armor (`TV_HARD_ARMOR`). Leather and robes are allowed. Soft armor heavier than 20 pounds is called bulky, same warning other classes get. Starts with a wooden club and a prayer book. |
-| Class | Bard | included | Clean-room, mage spellbook used as songs. Sleep, confusion, light, detection, and identify come early and fail less. Bolts and balls come later. Word of Destruction is level 32. Charisma and dexterity are the high stats. Experience +25%. First spells at level 2. Armor heavier than 15 pounds is bulky, so they live in leather. Not a second jester: the jester stays the even, comic mage. |
+| Class | Druid | included | Clean-room. Prayers stay on the priest book: healing, food, light, and sensing come early. Turn undead, dispel evil, and holy shield come late and fail more often. Hit-die bonus +3, experience +25%, first spells at level 1. Wisdom is the casting stat. Will not equip metal body armor (`TV_HARD_ARMOR`). Starts with a wooden club and a prayer book. A second, short grove list is optional: see Dual-realm druid below. |
+| Class | Bard | included | Clean-room, mage spellbook used as songs. Sleep, confusion, light, detection, and identify come early and fail less. Bolts and balls come later. Word of Destruction is level 32. Charisma and dexterity are the high stats. Experience +25%. First spells at level 2. Armor heavier than 15 pounds is bulky. Starts with a flute. The best instrument in the pack lowers song failure; see Bard instruments below. |
 | Class | Adventurer | included | Clean-room generalist. Fighting between rogue and warrior, some stealth, some device skill, a short mage list (missile, light, sleep, cures, a few bolts). Fireball, recharge, and the great spells are unlearnable (level 99 in the table). Experience +35%, first spells at level 4, can wear medium armor (bulky past 30 pounds). |
 | Class | Monk | included | Already in Pmoria. Not a second monk. |
 | Class | Ranger variations | not adopted | No public source found for a named second ranger. The Umoria ranger remains the bow-and-spell warrior. The druid covers the nature-caster side of that idea. |
-| Feature | Guild halls | planned | See Omega, below. One hall in the existing town, not a second town. |
-| Feature | Secret thieves' guild | planned | A door that looks like a wall, only for rogues and nearby sneaks (ninja, bard). Part of the guild pass. |
+| Feature | Guild halls | included | One adventurers' hall, door `7`, placed again each time the town is generated. Identify one item (20 gold plus 5 per level), one rumor, or buy the profession's starting book if it was lost. Warriors, monks, and ninjas are turned away from the book. Druids choose the prayer book or the grove book. |
+| Feature | Secret thieves' guild | included | One extra tile, character `#`, not a second district. Rogues, ninjas, bards, and jesters see the guild and enter the same hall. Everyone else sees a stone wall and is told the stone is solid. |
 | Feature | Water levels | not adopted | New terrain is a large generator change and slows the dive. |
 | Feature | Expanded random town | not adopted | The classic town stays fixed. |
-| Feature | Quests | planned | See below. |
+| Feature | Quests | included | Notice board, door `?`. Two jobs: kill 3 to 6 of a small monster that already exists, or bring back rations, torches, oil, or a club. Reward is gold and a little experience. A finished job is replaced. Nothing blocks the stairs to level 50. |
 | Feature | Trading post | not adopted | It was a multi-player exchange. This is a single-player game. |
-| Feature | Bank and four coin metals | planned | Copper, silver, gold, and mithril, with a bank that changes them for a fee. Gold in the pack is enough for a quick game, so this waits. Shops stay priced in gold. |
-| Feature | Bard instruments | planned | The article says bards play instruments and that charisma matters to that. This bard uses the mage book and a charisma bonus on the character, not a new item class. |
+| Feature | Bank and four coin metals | included | Door `8`. The balance is saved. Deposit keeps a tenth as a fee (at least 1). Withdraw is free. Copper, silver, gold, and mithril trade bars are bought at a tenth over face and cashed at a tenth under (50, 200, 1000, 5000). Shops stay priced in gold coins. Coin piles on the floor still become gold. The bars are a new object type so they can be carried. |
+| Feature | Bard instruments | included | Flute, lute, and harp. The general store can stock them. A bard starts with a flute. The best instrument in the pack lowers song failure by its own bonus plus the charisma adjustment. No instrument adds 12 to the failure chance. A song that works says which instrument was played. |
 | Feature | Heavier food and speed costs | not adopted | Pmoria already has hunger. A quadratic food cost for speed rings would change every class. |
 | Feature | Stat-minimum autoroller | not adopted | The existing reroll is enough, and an autoroller invites endless generation. |
 
@@ -114,8 +114,8 @@ A player write-up of MacMoria 5.5c (These Old Games, 2019) says that build's dru
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Color map | included | Already in PmoriaPlus. `-m` and `MORIA_MONOCHROME` turn it off. |
-| Druid class | included | Single prayer book, as above. Not both books at once. |
-| Dual-realm druid | planned | Spell knowledge is one 32-bit mask in the save file. A second book needs a save change. Deferred so current saves stay valid. |
+| Druid class | included | Prayer book, as above, plus an optional grove book. |
+| Dual-realm druid | included | Prayers stay on the original spell mask, so an old druid save still has the same prayers. Grove workings are a second mask in the patch 1 trailer, eight spells, learned with `G` only when the grove book is carried. `m` casts those workings. `p` still prays. Mages skip that book. A druid with no grove book plays as before. |
 | Monster list browser | not adopted | A Mac application beside the game, not a dungeon rule. |
 
 ## Other Moria variants
@@ -138,12 +138,16 @@ Omega is not a Moria variant. It is a different roguelike (the Brothers, later m
 
 | Idea | Status | How it should land |
 | --- | --- | --- |
-| Guilds | planned | One adventurers' hall on the town map, with a wing or a counter for each profession. Services stay small: identify one item, hear a rumor, buy the class's starting book if you lost it. The wrong profession is turned away. Rogues and ninjas can have the hidden door Imoria used, as a single extra tile, not a new district. |
-| Priesthoods | planned | At the temple, a priest, paladin, druid, or healer picks one patron. Three or four original patrons are enough (for example a god of the forge, a god of the wild, a god of mercy, a nameless deep). Each gives one small boon and one small ban. No Omega deity names, prayers, or rank titles. Demigods can be left godless so they stay their own thing. |
-| Quests | planned | A notice board in town with two jobs at a time: kill a number of one monster kind that already exists, or bring back an object kind the shops already sell. Reward is gold and a little experience. No multi-stage plot, no second dungeon, no quest that blocks the stairs to level 50. |
+| Guilds | included | One adventurers' hall. Identify, a rumor, or a replacement book. The hidden door is one tile for rogues, ninjas, bards, and jesters. |
+| Priesthoods | included | In the temple, `D` dedicates a priest, paladin, druid, or healer. The four patrons are the Forge, the Wild, the Merciful, and the Nameless Deep. Each is one small combat boon and one small ban, recomputed with the other bonuses so they do not stack. The Deep also makes shop prices worse. Demigods are not offered a patron. No Omega names, prayers, or ranks. The choice is permanent. |
+| Quests | included | The notice board posts two jobs. Kill counts use monsters already in the list (mouse, kobold, yeek, centipede, orc, worm mass), never the Balrog. Fetch jobs use rations, torches, oil, or a club. |
 
-These three are the next phase. They are not in the binary yet.
+These three are in the binary. They do not add a town, a dungeon, or a plot.
 
 ## Save files
 
-The on-disk character is still Pmoria's version 0.9, patch 0. `prace` and `pclass` are bytes. New races are indexes 10 (Gnome) and 11 (Dryad). New classes are 13 (Druid), 14 (Bard), and 15 (Adventurer). Indexes 0 through 9 and 0 through 12 are the Pmoria ids, including Monk at 12. A save from PmoriaPlus still loads and still shows the same race and class. The default filename for a new game is `moriasupreme.save` in the home directory, so it does not overwrite a `moria.save` from an older binary. Pass the old path on the command line to open it.
+The on-disk character is still version 0.9. `prace` and `pclass` are bytes. New races are indexes 10 (Gnome) and 11 (Dryad). New classes are 13 (Druid), 14 (Bard), and 15 (Adventurer). Indexes 0 through 9 and 0 through 12 are the Pmoria ids, including Monk at 12. A save from PmoriaPlus still loads and still shows the same race and class.
+
+Patch level is 1. The bytes through `birth_date` are the patch 0 layout. After that, a patch 1 save adds a fixed trailer: patron, bank balance, the druid's second spell mask, and two notice-board jobs. A patch 0 save has no trailer and loads with those values empty. A patch 1 save will not load in the phase 1 binary. Score files still use the same record size; an older score file (patch 0) still loads, because only a newer patch than this binary is rejected.
+
+Object indexes were not inserted. The hall, bank, board, hidden door, instruments, trade bars, and grove book are appended after the old object list. The six shops are still the only `store[]` entries, so that part of a save does not grow. The default filename for a new game is `moriasupreme.save` in the home directory, so it does not overwrite a `moria.save` from an older binary. Pass the old path on the command line to open it.

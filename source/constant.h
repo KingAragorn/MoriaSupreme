@@ -30,7 +30,10 @@ some of the system defines set up there.
 /* Current version number of Moria				*/
 #define CUR_VERSION_MAJ 0 /* version 0.9 */
 #define CUR_VERSION_MIN 9
-#define PATCH_LEVEL 0
+/* Patch 1 appends a trailer after birth_date (patron, bank, second spell
+   mask, two town jobs). The bytes before that trailer are the patch 0
+   layout, and a patch 0 save still loads. */
+#define PATCH_LEVEL 1
 
 #ifndef TRUE
 #define TRUE 1
@@ -93,7 +96,7 @@ some of the system defines set up there.
 /* Note that the following constants are all related, if you change one,
    you must also change all succeeding ones.  Also, player_init[] and
    store_choice[] may also have to be changed. */
-#define MAX_OBJECTS    427    /* Number of objects for universe	       */
+#define MAX_OBJECTS    439    /* Number of objects for universe	       */
 #define MAX_DUNGEON_OBJ 351   /* Number of dungeon objects */
 #define OBJ_OPEN_DOOR	374
 #define OBJ_CLOSED_DOOR 375
@@ -109,6 +112,21 @@ some of the system defines set up there.
 #define OBJ_NOTHING	424
 #define OBJ_RUINED_CHEST 425
 #define OBJ_WIZARD      426
+/* Town services and gear appended after the Pmoria list. Do not insert
+   earlier: inventory stores these indexes. */
+#define OBJ_HALL_DOOR   427
+#define OBJ_BANK_DOOR   428
+#define OBJ_BOARD       429
+#define OBJ_HIDDEN_DOOR 430
+#define OBJ_FLUTE       431
+#define OBJ_LUTE        432
+#define OBJ_HARP        433
+#define OBJ_COPPER_BAR  434
+#define OBJ_SILVER_BAR  435
+#define OBJ_GOLD_BAR    436
+#define OBJ_MITHRIL_BAR 437
+#define OBJ_GROVE_BOOK  438
+#define GROVE_BOOK_SUBVAL 80
 #define OBJECT_IDENT_SIZE 448 /* 7*64, see object_offset() in desc.c,
 				 could be MAX_OBJECTS o_o() rewritten  */
 #define MAX_GOLD       18     /* Number of different types of gold     */
@@ -181,7 +199,8 @@ some of the system defines set up there.
 
 /* Race and class ids are stored in the save file as bytes. New ids are
    appended, so a Pmoria 0.98 save still names the same race and class.
-   The save layout itself is unchanged (still version 0.9, patch 0). */
+   Patch 0 saves (no trailer) still load. Patch 1 writes the same prefix
+   and then the town trailer; see the note by PATCH_LEVEL. */
 #define MAX_RACES	 12   /* Number of defined races	       */
 #define MAX_CLASS	 16   /* Number of defined classes	       */
 
@@ -201,6 +220,19 @@ some of the system defines set up there.
 #define CLASS_DRUID		13
 #define CLASS_BARD		14
 #define CLASS_ADVENTURER	15
+
+/* Town patrons. Stored as one byte in the patch 1 trailer. 0 is none. */
+#define PATRON_NONE		0
+#define PATRON_FORGE		1
+#define PATRON_WILD		2
+#define PATRON_MERCY		3
+#define PATRON_DEEP		4
+
+/* Notice-board jobs. Two of them, also in the trailer. */
+#define QUEST_NONE		0
+#define QUEST_KILL		1
+#define QUEST_FETCH		2
+#define TOWN_QUESTS		2
 
 
 #define USE_DEVICE	  3   /* x> Harder devices x< Easier devices   */
@@ -607,6 +639,8 @@ some of the system defines set up there.
 #define TV_PRAYER_BOOK	91
 #define TV_INSTRUMENT   92
 #define TV_SAGE_BOOK    93
+/* Trade bars. Not TV_GOLD, so picking one up does not turn it into coins. */
+#define TV_METAL        94
 /* objects with tval above this are never picked up by monsters */
 #define TV_MAX_OBJECT	99
 #define TV_GOLD		100

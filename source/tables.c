@@ -96,7 +96,7 @@ int8u rgold_adj[MAX_RACES][MAX_RACES] = {
 /* object_list[] index of objects that may appear in the store */
 int16u store_choice[MAX_STORES][STORE_CHOICES] = {
 	/* General Store */
-{373,372,371,84,84,372,123,373,372,357,356,355,354,351,351,351,351,351,
+{373,372,371,84,84,OBJ_HARP,123,373,372,357,356,355,354,351,351,OBJ_FLUTE,OBJ_LUTE,351,
 	329,331,330,330,332,330,331,329},
 	/* Armory	 */
 {94,95,96,109,103,104,105,106,110,111,112,114,116,124,125,126,127,129,103,

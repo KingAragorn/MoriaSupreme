@@ -78,3 +78,8 @@ relicensed, and it will not be sold.
 Races added beside the Pmoria set: Gnome (the Umoria race Pmoria had
 replaced with the Spectre) and Dryad. Classes added: Druid, Bard, and
 Adventurer. Their numbers are original. See docs/VARIANTS.md.
+
+Patch 1 adds the town hall, bank, notice board, hidden guild door,
+four patrons, bard instruments, and a grove book for druids. Saves
+from patch 0 still load. The new fields are stored after the old
+character record.

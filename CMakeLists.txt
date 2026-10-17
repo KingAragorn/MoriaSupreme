@@ -48,6 +48,7 @@ set(PMORIA_SOURCES
   source/player.c
   source/tables.c
   source/incant.c
+  source/townlife.c
 )
 
 add_executable(moriasupreme ${PMORIA_SOURCES})

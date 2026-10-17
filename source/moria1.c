@@ -162,6 +162,29 @@ void calc_bonuses()
   p_ptr->lght_resist = FALSE;
   p_ptr->ffall	     = FALSE;
 
+  /* Patron combat mods are recomputed here, so they do not stack. */
+  if (town_patron == PATRON_FORGE)
+    {
+      plus_tohit += 2;
+      plus_todam += 2;
+      plus_ac -= 3;
+    }
+  else if (town_patron == PATRON_WILD)
+    {
+      plus_ac += 4;
+      plus_tohit -= 1;
+    }
+  else if (town_patron == PATRON_MERCY)
+    {
+      plus_ac += 2;
+      plus_todam -= 2;
+    }
+  else if (town_patron == PATRON_DEEP)
+    {
+      plus_tohit += 3;
+      plus_ac -= 4;
+    }
+
   old_dis_ac = m_ptr->dis_ac;
   m_ptr->ptohit	 = tohit_adj()+plus_tohit;	      /* Real To Hit   */
   m_ptr->ptodam	 = todam_adj()+plus_todam;	      /* Real To Dam   */

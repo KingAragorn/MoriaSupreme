@@ -27,17 +27,19 @@ Clean-room additions:
 | Kind | Name | Idea |
 | --- | --- | --- |
 | Race | Dryad | Wood spirit. Extra charisma and wisdom. Best as a druid. |
-| Class | Druid | Prayers leaned toward healing and the wild. Will not wear metal armor. |
-| Class | Bard | Mage spells learned as songs. Charm and lore before fire. Light armor. |
+| Class | Druid | Prayers leaned toward healing and the wild. Will not wear metal armor. An optional grove book adds a few mage-like workings. |
+| Class | Bard | Mage spells learned as songs. Charm and lore before fire. Light armor. Starts with a flute. |
 | Class | Adventurer | A bit of fighting, stealth, and a few mage spells. Slow to level. |
 
 Which older classes each older race may take is unchanged, except that Humans, Half-Elves, and the races that fit a new profession may also take Druid, Bard, or Adventurer. The full grid is in `docs/VARIANTS.md`.
 
-Save files are still the Pmoria 0.9 layout. Race and class are stored as indexes, and the new ones are appended, so an old save still names the same race and class. New games write `$HOME/moriasupreme.save`. Scores go to `$HOME/.moriasupreme/scores`.
+Save files are still version 0.9. Race and class are stored as indexes, and the new ones are appended, so an old save still names the same race and class. Patch 1 adds a trailer after the old character record (patron, bank balance, the druid's second spell list, and two town jobs). A patch 0 save still loads. New games write `$HOME/moriasupreme.save`. Scores go to `$HOME/.moriasupreme/scores`.
 
-## Not in this build yet
+## Town
 
-Guilds, priesthoods, and quests are the next phase. The sketch, kept to one town, is in `docs/VARIANTS.md`. So are Imoria's bank and separate coin metals, bard instruments, and a second spellbook for the MacMoria reading of the druid. Day and night in town is already the classic Pmoria cycle: at night the streets are darker and more people are out.
+The same single town now has an adventurers' hall (`7`), a bank (`8`), and a notice board (`?`). Rogues, ninjas, bards, and jesters also have a door that looks like a wall. The temple can take a dedication from a priest, paladin, druid, or healer: the Forge, the Wild, the Merciful, or the Nameless Deep. None of this adds a second town or a quest that blocks the stairs to the Balrog. Details and the license notes are in `docs/VARIANTS.md`.
+
+Day and night in town is still the classic Pmoria cycle: at night the streets are darker and more people are out.
 
 ## Build
 
