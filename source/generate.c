@@ -1469,6 +1469,7 @@ static void town_gen()
 	}
       alloc_monster(MIN_MALLOC_TD, 3, TRUE);
     }
+  place_town_services();
   store_maint();
 }
 

@@ -230,6 +230,18 @@ int y, x;
     case 106: /* Magic-User */
       enter_store(5);
       break;
+    case 107: /* Adventurers' hall */
+      town_enter_hall();
+      break;
+    case 108: /* Bank */
+      town_enter_bank();
+      break;
+    case 109: /* Notice board */
+      town_enter_board();
+      break;
+    case 110: /* Hidden guild door */
+      town_try_hidden();
+      break;
 
     default:
       msg_print("Unknown trap value.");
@@ -641,6 +653,7 @@ int monptr, dam;
   m_ptr->csleep = 0;
   if (m_ptr->hp < 0)
     {
+      town_note_kill((int)m_ptr->mptr);
       i = monster_death((int)m_ptr->fy, (int)m_ptr->fx,
 			c_list[m_ptr->mptr].cmove);
       if ((py.flags.blind < 1 && m_ptr->ml)

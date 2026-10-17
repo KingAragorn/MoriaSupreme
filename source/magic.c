@@ -34,12 +34,19 @@ void cast()
     msg_print("You have no light to read by.");
   else if (py.flags.confused > 0)
     msg_print("You are too confused.");
+  else if (py.misc.pclass == CLASS_DRUID)
+    town_cast_grove();
   else if (class[py.misc.pclass].spell != MAGE)
     msg_print("You can't cast spells!");
   else if (!find_range(TV_MAGIC_BOOK, TV_NEVER, &i, &j))
     msg_print("But you are not carrying any spell-books!");
   else if (get_item(&item_val, "Use which spell-book?", i, j, CNIL, CNIL))
     {
+      if (inventory[item_val].subval == GROVE_BOOK_SUBVAL)
+	{
+	  msg_print("That book is written for the grove.");
+	  return;
+	}
       result = cast_spell("Cast which spell?", item_val, &choice, &chance);
       if (result < 0)
 	msg_print("You don't know any spells in that book.");
@@ -185,6 +192,8 @@ void cast()
 	      /* End of spells.				     */
 	      if (!free_turn_flag)
 		{
+		  if (py.misc.pclass == CLASS_BARD)
+		    town_bard_played();
 		  p_ptr = &py.misc;
 		  if ((spell_worked & (1L << choice)) == 0)
 		    {

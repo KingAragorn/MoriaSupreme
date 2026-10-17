@@ -18,6 +18,30 @@ import time
 
 import pyte
 
+def _repeat_last(self, count=1):
+    """Honor ECMA-48 REP (CSI n b). ncurses uses it to repeat a glyph.
+
+    The count is extra copies of the single cell just drawn. A multi-cell
+    string here would be concatenated again on the next repeat, so ignore it.
+    """
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        count = 1
+    if count < 1:
+        count = 1
+    if count > self.columns:
+        count = self.columns
+    if self.cursor.x <= 0:
+        return
+    prev = self.buffer[self.cursor.y][self.cursor.x - 1].data
+    if not prev or len(prev) != 1:
+        return
+    self.draw(prev * count)
+
+pyte.screens.Screen.repeat_last = _repeat_last
+pyte.streams.Stream.csi["b"] = "repeat_last"
+
 RACES = [
     ("Human", 0xFFFF),
     ("Half-Elf", 0xFFFF),
@@ -99,7 +123,17 @@ class Session:
             pass
 
     def text(self):
-        return "\n".join(line.rstrip() for line in self.screen.display)
+        # Read the buffer directly. pyte's display() asserts on multi-cell
+        # strings, and a bad repeat can make that assertion very expensive.
+        lines = []
+        for y in range(ROWS):
+            chars = []
+            row = self.screen.buffer[y]
+            for x in range(COLS):
+                data = row[x].data or " "
+                chars.append(data[0])
+            lines.append("".join(chars).rstrip())
+        return "\n".join(lines)
 
     def pump(self, timeout):
         end = time.time() + timeout
@@ -212,7 +246,7 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
         session.send("\r")
         if not session.wait_for("or Q to exit"):
             return False, "character sheet did not finish", session
-        lines = session.screen.display
+        lines = session.text().splitlines()
         race_field = lines[3][15:].strip()
         class_field = lines[5][15:].strip()
         if not race_field.startswith(race) or not class_field.startswith(class_title):
@@ -224,16 +258,27 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
             # by cloning through the current display plus a deep copy below.
             shots["sheet"] = clone_screen(session.screen)
         session.send(" ")
-        session.pump(0.5)
+        # The sheet is replaced by the map. A caster may have to clear
+        # "you can learn a spell" before @ is drawn.
+        end = time.time() + 8
+        while time.time() < end:
+            session.pump(0.12)
+            text = session.text()
+            if "-more-" in text or "or Q to exit" in text:
+                session.send(" ")
+                continue
+            if "@" in text or "RIP" in text or "killed by" in text:
+                break
         # A few real turns, with spaces so a -more- prompt cannot swallow them.
         session.send(" h j k l h l ")
-        session.pump(0.5)
+        session.pump(0.4)
         town = session.text()
         if "@" not in town and "Dead" not in town and "RIP" not in town:
             return False, "never reached the map", session
         if shots is not None:
             shots["play"] = clone_screen(session.screen)
-        session.send("\x18")
+        # Escape leaves a town menu if a step landed on one, then ^X saves.
+        session.send("\033\x18")
         # The USG flock stand-in keeps a lock for up to 10 seconds.
         end = time.time() + 20
         while time.time() < end and session.proc.poll() is None:
