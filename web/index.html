@@ -262,8 +262,15 @@
         return;
       rogueLock = true;
       Module.ccall("moria_set_rogue_like", null, ["number"], [rogueBox.checked ? 1 : 0]);
+      window.moriaKeysetSynced = false;
       if (Module.FS && Module.FS.syncfs)
-        Module.FS.syncfs(false, function (err) { if (err) console.error(err); });
+        Module.FS.syncfs(false, function (err) {
+          if (err)
+            console.error(err);
+          window.moriaKeysetSynced = true;
+        });
+      else
+        window.moriaKeysetSynced = true;
       term.focus();
       setTimeout(function () { rogueLock = false; }, 600);
     });
@@ -292,8 +299,11 @@
         return;
       try {
         var on = !!Module.ccall("moria_rogue_like", "number", [], []);
-        if (rogueBox.checked !== on)
+        if (rogueBox.checked !== on) {
+          rogueLock = true;
           rogueBox.checked = on;
+          setTimeout(function () { rogueLock = false; }, 600);
+        }
       } catch (e) {}
     }, 400);
 

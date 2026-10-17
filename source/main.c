@@ -133,6 +133,13 @@ char *argv[];
 
   /* default command set defined in config.h file */
   rogue_like_commands = ROGUE_LIKE;
+#ifdef __EMSCRIPTEN__
+  {
+    /* Before the news screen, so the page toggle is already in effect. */
+    extern void moria_load_keyset();
+    moria_load_keyset();
+  }
+#endif
 
 #ifdef MORIA_POSIX
   moria_init_paths();
