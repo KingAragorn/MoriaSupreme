@@ -6,9 +6,6 @@
    not for profit purposes provided that this copyright and statement are
    included in all such copies. */
 
-#ifdef __TURBOC__
-#include	<stdio.h>
-#endif /* __TURBOC__ */
  
 #include "config.h"
 #include "constant.h"
@@ -31,9 +28,6 @@ void read_scroll()
   register int ident, l;
   register inven_type *i_ptr;
   register struct misc *m_ptr;
-#ifdef ATARIST_MWC
-  int32u holder = TR_CURSED;
-#endif
 
   free_turn_flag = TRUE;
   if (py.flags.blind > 0)
@@ -72,11 +66,7 @@ void read_scroll()
 		  msg_print(out_val);
 		  if (enchant(&i_ptr->tohit, 10))
 		    {
-#ifdef ATARIST_MWC
-		      i_ptr->flags &= ~holder;
-#else
 		      i_ptr->flags &= ~TR_CURSED;
-#endif
 		      calc_bonuses();
 		    }
 		  else
@@ -98,11 +88,7 @@ void read_scroll()
 		    j = 10; 
 		  if (enchant(&i_ptr->todam, j))
 		    {
-#ifdef ATARIST_MWC
-		      i_ptr->flags &= ~holder;
-#else
 		      i_ptr->flags &= ~TR_CURSED;
-#endif
 		      calc_bonuses ();
 		    }
 		  else
@@ -128,20 +114,6 @@ void read_scroll()
 		tmp[k++] = INVEN_FEET;
 
 	      if (k > 0)  l = tmp[randint(k)-1];
-#ifdef ATARIST_MWC
-	      if (holder & inventory[INVEN_BODY].flags)
-		l = INVEN_BODY;
-	      else if (holder & inventory[INVEN_ARM].flags)
-		l = INVEN_ARM;
-	      else if (holder & inventory[INVEN_OUTER].flags)
-		l = INVEN_OUTER;
-	      else if (holder & inventory[INVEN_HEAD].flags)
-		l = INVEN_HEAD;
-	      else if (holder & inventory[INVEN_HANDS].flags)
-		l = INVEN_HANDS;
-	      else if (holder & inventory[INVEN_FEET].flags)
-		l = INVEN_FEET;
-#else
 	      if (TR_CURSED & inventory[INVEN_BODY].flags)
 		l = INVEN_BODY;
 	      else if (TR_CURSED & inventory[INVEN_ARM].flags)
@@ -154,7 +126,6 @@ void read_scroll()
 		l = INVEN_HANDS;
 	      else if (TR_CURSED & inventory[INVEN_FEET].flags)
 		l = INVEN_FEET;
-#endif
 
 	      if (l > 0)
 		{
@@ -164,11 +135,7 @@ void read_scroll()
 		  msg_print(out_val);
 		  if (enchant(&i_ptr->toac, 10))
 		    {
-#ifdef ATARIST_MWC
-		      i_ptr->flags &= ~holder;
-#else
 		      i_ptr->flags &= ~TR_CURSED;
-#endif
 		      calc_bonuses ();
 		    }
 		  else
@@ -319,11 +286,7 @@ void read_scroll()
 		      flag = TRUE;
 		  if (flag)
 		    {
-#ifdef ATARIST_MWC
-		      i_ptr->flags &= ~holder;
-#else
 		      i_ptr->flags &= ~TR_CURSED;
-#endif
 		      calc_bonuses ();
 		    }
 		  else
@@ -368,20 +331,6 @@ void read_scroll()
 		tmp[k++] = INVEN_FEET;
 
 	      if (k > 0)  l = tmp[randint(k)-1];
-#ifdef ATARIST_MWC
-	      if (holder & inventory[INVEN_BODY].flags)
-		l = INVEN_BODY;
-	      else if (holder & inventory[INVEN_ARM].flags)
-		l = INVEN_ARM;
-	      else if (holder & inventory[INVEN_OUTER].flags)
-		l = INVEN_OUTER;
-	      else if (holder & inventory[INVEN_HEAD].flags)
-		l = INVEN_HEAD;
-	      else if (holder & inventory[INVEN_HANDS].flags)
-		l = INVEN_HANDS;
-	      else if (holder & inventory[INVEN_FEET].flags)
-		l = INVEN_FEET;
-#else
 	      if (TR_CURSED & inventory[INVEN_BODY].flags)
 		l = INVEN_BODY;
 	      else if (TR_CURSED & inventory[INVEN_ARM].flags)
@@ -394,7 +343,6 @@ void read_scroll()
 		l = INVEN_HANDS;
 	      else if (TR_CURSED & inventory[INVEN_FEET].flags)
 		l = INVEN_FEET;
-#endif
 
 	      if (l > 0)
 		{
@@ -408,11 +356,7 @@ void read_scroll()
 		      flag = TRUE;
 		  if (flag)
 		    {
-#ifdef ATARIST_MWC
-		      i_ptr->flags &= ~holder;
-#else
 		      i_ptr->flags &= ~TR_CURSED;
-#endif
 		      calc_bonuses ();
 		    }
 		  else

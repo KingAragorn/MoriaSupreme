@@ -17,11 +17,7 @@
 #include "constant.h"
 #include "types.h"
 
-#ifdef Pyramid
-#include <sys/time.h>
-#else
 #include <time.h>
-#endif
 
 #include <ctype.h>
 
@@ -35,49 +31,21 @@
 #include <sys/file.h>
 #endif
 
-#ifdef MSDOS
-#include <io.h>
-#else
-#if !defined(ATARIST_MWC) && !defined(MAC) && !defined(AMIGA)
-#if !defined(ATARIST_TC)
-#ifndef VMS
 #include <pwd.h>
-#else
-#include <file.h>
-#endif
-#endif
-#endif
-#endif
 
 #ifndef MORIA_POSIX
-#ifdef VMS
-unsigned int getuid(), getgid();
-#else
 #ifdef unix
 #ifdef USG
 unsigned short getuid(), getgid();
 #else
-#ifndef SECURE
-#ifdef BSD4_3
-uid_t getuid(), getgid();
-#else  /* other BSD versions */
 int getuid(), getgid();
-#endif
-#endif
-#endif
 #endif
 #endif
 #endif
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#ifndef VMS
-#ifndef ATARIST_TC
 #include <fcntl.h>
-#endif
-#endif
-#endif
 #else
 #include <strings.h>
 #endif
@@ -87,12 +55,14 @@ int getuid(), getgid();
    `topen' declaration.  */
 #include "externs.h"
 
+#ifdef __EMSCRIPTEN__
+void moria_persist_sync();
+#endif
+
 #if defined(__APPLE__) || defined(__unix__)
 #include <unistd.h>
 #elif !defined(BSD4_3)
-#ifndef ATARIST_TC
 long lseek();
-#endif /* ATARTIST_TC */
 #else
 off_t lseek();
 #endif
@@ -106,12 +76,8 @@ off_t lseek();
 #endif
 #endif
 
-#ifndef VMS
-#ifndef MAC
 #if defined(ultrix) || defined(USG)
 void exit ();
-#endif
-#endif
 #endif
 
 #if defined(LINT_ARGS)
@@ -121,36 +87,19 @@ static void print_tomb(void);
 static void kingly(void);
 #endif
 
-#ifdef ATARIST_TC
-/* Include this to get prototypes for standard library functions.  */
-#include <stdlib.h>
-#endif
 
 #ifndef MORIA_POSIX
-#ifndef VMS
-#ifndef MAC
-#if !defined(ATARIST_MWC) && !defined(AMIGA)
 long time();
-#endif
-#endif
-#endif
 #endif
 
 static void date(day)
 char *day;
 {
   register char *tmp;
-#ifdef MAC
   time_t clockvar;
-#else
-  long clockvar;
-#endif
 
-#ifdef MAC
-  clockvar = time((time_t *) 0);
-#else
-  clockvar = time((long *) 0);
-#endif
+  /* time_t is wider than long on wasm32. ctime reads a time_t. */
+  clockvar = time((time_t *)0);
   tmp = ctime(&clockvar);
   tmp[10] = '\0';
   (void) strcpy(day, tmp);
@@ -170,7 +119,6 @@ char *in_str;
 }
 
 
-#ifndef __TURBOC__
 #if (defined(USG) || defined(atarist)) && !defined(VMS)
 #if !defined(AMIGA) && !defined(MAC) && !defined(ATARIST_TC) && !defined(__APPLE__)
 
@@ -195,12 +143,7 @@ int f, l;
 
   if (fstat (f, &sbuf) < 0)
     return -1;
-#ifdef atarist
-  (void) sprintf (lockname, (char *)prefix_file((char *)"moria.%d"),
-		  sbuf.st_ino);
-#else
   (void) sprintf (lockname, "/tmp/moria.%d", sbuf.st_ino);
-#endif
   if (l & LOCK_UN)
     return unlink(lockname);
 
@@ -225,7 +168,6 @@ int f, l;
 }
 #endif
 #endif
-#endif
 
 void display_scores(show_player)
 int show_player;
@@ -239,25 +181,8 @@ int show_player;
   int16 player_uid;
 #endif
 
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-#if defined(MAC) || defined(MSDOS)
-  if ((highscore_fp = fopen(MORIA_TOP, "rb")) == NULL)
-#else
-  if ((highscore_fp = fopen(MORIA_TOP, "r")) == NULL)
-#endif
-    {
-      (void) sprintf (string, "Error opening score file \"%s\"\n", MORIA_TOP);
-      msg_print(string);
-      msg_print(CNIL);
-      return;
-    }
-#endif
 
-#ifndef BSD4_3
   (void) fseek(highscore_fp, (long)0, L_SET);
-#else
-  (void) fseek(highscore_fp, (off_t)0, L_SET);
-#endif
 
   /* Read version numbers from the score file, and check for validity.  */
   version_maj = getc (highscore_fp);
@@ -273,23 +198,15 @@ int show_player;
 	   || (version_min == 2 && patch_level < 2)
 	   || (version_min < 2))
     {
-      msg_print("Sorry. This scorefile is from a different version of \
-umoria.");
+      msg_print("Sorry. This scorefile is from a different version of  umoria.");
       msg_print (CNIL);
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-      (void) fclose (highscore_fp);
-#endif
       return;
     }
 
 #ifdef unix
   player_uid = getuid ();
 #else
-#ifdef VMS
-  player_uid = (getgid()*1000) + getuid();
-#else
   /* Otherwise player_uid is not used.  */
-#endif
 #endif
 
   /* set the static fileptr in save.c to the highscore file pointer */
@@ -340,9 +257,6 @@ umoria.");
       if (input == ESCAPE)
 	break;
     }
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-  (void) fclose (highscore_fp);
-#endif
 }
 
 
@@ -357,29 +271,9 @@ int duplicate_character ()
   high_scores score;
   int8u version_maj, version_min, patch_level;
   int16 player_uid;
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-  char string[80];
-#endif
 
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-#if defined(MAC) || defined(MSDOS)
-  if ((highscore_fp = fopen(MORIA_TOP, "rb")) == NULL)
-#else
-  if ((highscore_fp = fopen(MORIA_TOP, "r")) == NULL)
-#endif
-    {
-      (void) sprintf (string, "Error opening score file \"%s\"\n", MORIA_TOP);
-      msg_print(string);
-      msg_print(CNIL);
-      return FALSE;
-    }
-#endif
 
-#ifndef BSD4_3
   (void) fseek(highscore_fp, (long)0, L_SET);
-#else
-  (void) fseek(highscore_fp, (off_t)0, L_SET);
-#endif
 
   /* Read version numbers from the score file, and check for validity.  */
   version_maj = getc (highscore_fp);
@@ -395,12 +289,8 @@ int duplicate_character ()
       || (version_min == 2 && patch_level < 2)
       || (version_min < 2))
     {
-      msg_print("Sorry. This scorefile is from a different version of \
-umoria.");
+      msg_print("Sorry. This scorefile is from a different version of  umoria.");
       msg_print (CNIL);
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-      (void) fclose (highscore_fp);
-#endif
       return FALSE;
     }
 
@@ -410,11 +300,7 @@ umoria.");
 #ifdef unix
   player_uid = getuid ();
 #else
-#ifdef VMS
-  player_uid = (getgid()*1000) + getuid();
-#else
   player_uid = 0;
-#endif
 #endif
 
   rd_highscore(&score);
@@ -428,9 +314,6 @@ umoria.");
 
       rd_highscore(&score);
     }
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-  (void) fclose (highscore_fp);
-#endif
 
   return FALSE;
 #endif  /* ! unix && ! VMS */
@@ -445,10 +328,6 @@ static void print_tomb()
   register int i;
   char day[11];
   register char *p;
-#ifdef MAC
-  char func;
-  int ok;
-#endif
 
   clear_screen();
   put_buffer ("_______________________", 1, 15);
@@ -509,43 +388,10 @@ static void print_tomb()
 
  retry:
   flush();
-#ifdef MAC
-  /* On Mac, file_character() gets file name via std file dialog */
-  /* So, the prompt for character record cannot be made to do double duty */
-  put_buffer ("('F' - Save record in file / 'Y' - Display record on screen \
-/ 'N' - Abort)", 23, 0);
-  put_buffer ("Character record [F/Y/N]?", 22, 0);
-  do
-    {
-      func = inkey();
-      switch (func)
-	{
-	case 'f': case 'F':
-	  func = 'F';
-	  ok = TRUE;
-	  break;
-	case 'y': case 'Y':
-	  func = 'Y';
-	  ok = TRUE;
-	  break;
-	case 'n': case 'N':
-	  func = 'N';
-	  ok = TRUE;
-	  break;
-	default:
-	  bell();
-	  ok = FALSE;
-	  break;
-	}
-    }
-  while (!ok);
-  if (func != 'N')
-#else
   put_buffer ("(ESC to abort, return to print on screen, or file name)",
 	      23, 0);
   put_buffer ("Character record?", 22, 0);
   if (get_string (str, 22, 18, 60))
-#endif
     {
       for (i = 0; i < INVEN_ARRAY_SIZE; i++)
 	{
@@ -553,19 +399,11 @@ static void print_tomb()
 	  known2(&inventory[i]);
 	}
       calc_bonuses ();
-#ifdef MAC
-      if (func == 'F')
-	{
-	  if (!file_character())
-	    goto retry;
-	}
-#else
       if (str[0])
 	{
 	  if (!file_character (str))
 	    goto retry;
 	}
-#endif
       else
 	{
 	  clear_screen ();
@@ -615,9 +453,6 @@ static void highscores()
   char *tmp;
   int8u version_maj, version_min, patch_level;
   long curpos;
-#if defined(VMS) || defined(MSDOS) || defined(AMIGA) || defined(MAC)
-  char string[100];
-#endif
 
   clear_screen();
 
@@ -630,8 +465,7 @@ static void highscores()
 
   if (panic_save == 1)
     {
-      msg_print("Sorry, scores for games restored from panic save files \
-are not saved.");
+      msg_print("Sorry, scores for games restored from panic save files  are not saved.");
       return;
     }
 
@@ -640,11 +474,7 @@ are not saved.");
 #ifdef unix
   new_entry.uid = getuid();
 #else
-#ifdef VMS
-  new_entry.uid = (getgid()*1000) + getuid();
-#else
   new_entry.uid = 0;
-#endif
 #endif
   new_entry.mhp = py.misc.mhp;
   new_entry.chp = py.misc.chp;
@@ -672,39 +502,17 @@ are not saved.");
   /*  First, get a lock on the high score file so no-one else tries */
   /*  to write to it while we are using it, on VMS and IBMPCs only one
       process can have the file open at a time, so we just open it here */
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-#if defined(MAC) || defined(MSDOS)
-  if ((highscore_fp = fopen(MORIA_TOP, "rb+")) == NULL)
-#else
-  if ((highscore_fp = fopen(MORIA_TOP, "r+")) == NULL)
-#endif
-    {
-      (void) sprintf (string, "Error opening score file \"%s\"\n", MORIA_TOP);
-      msg_print(string);
-      msg_print(CNIL);
-      return;
-    }
-#else
-#ifdef ATARIST_TC
-  /* 'lock' always succeeds on the Atari ST */
-#else
   if (0 != flock((int)fileno(highscore_fp), LOCK_EX))
     {
       msg_print("Error gaining lock for score file");
       msg_print(CNIL);
       return;
     }
-#endif
-#endif
 
   /* Search file to find where to insert this character, if uid != 0 and
      find same uid/sex/race/class combo then exit without saving this score */
   /* Seek to the beginning of the file just to be safe. */
-#ifndef BSD4_3
   (void) fseek(highscore_fp, (long)0, L_SET);
-#else
-  (void) fseek(highscore_fp, (off_t)0, L_SET);
-#endif
 
   /* Read version numbers from the score file, and check for validity.  */
   version_maj = getc (highscore_fp);
@@ -715,27 +523,14 @@ are not saved.");
   if (feof (highscore_fp))
     {
       /* Seek to the beginning of the file just to be safe. */
-#ifndef BSD4_3
       (void) fseek(highscore_fp, (long)0, L_SET);
-#else
-      (void) fseek(highscore_fp, (off_t)0, L_SET);
-#endif
 
       (void) putc (CUR_VERSION_MAJ, highscore_fp);
       (void) putc (CUR_VERSION_MIN, highscore_fp);
       (void) putc (PATCH_LEVEL, highscore_fp);
 
       /* must fseek() before can change read/write mode */
-#ifndef BSD4_3
-#ifdef ATARIST_TC
-      /* no fseek relative to current position allowed */
-      (void) fseek (highscore_fp, (long)ftell (highscore_fp), L_SET);
-#else
       (void) fseek(highscore_fp, (long)0, L_INCR);
-#endif
-#else
-      (void) fseek(highscore_fp, (off_t)0, L_INCR);
-#endif
     }
   /* Support score files from 5.2.2 to present.  */
   else if ((version_maj != CUR_VERSION_MAJ)
@@ -746,9 +541,6 @@ are not saved.");
     {
       /* No need to print a message, a subsequent call to display_scores()
 	 will print a message.  */
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-      (void) fclose (highscore_fp);
-#endif
       return;
     }
 
@@ -774,17 +566,11 @@ are not saved.");
 	       && new_entry.race == old_entry.race
 	       && new_entry.class == old_entry.class)
 	{
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-	  (void) fclose (highscore_fp);
-#endif
 	  return;
 	}
       else if (++i >= SCOREFILE_SIZE)
 	{
 	  /* only allow one thousand scores in the score file */
-#if defined(MSDOS) || defined(VMS) || defined(AMIGA) || defined(MAC)
-	  (void) fclose (highscore_fp);
-#endif
 	  return;
 	}
       curpos = ftell (highscore_fp);
@@ -794,11 +580,7 @@ are not saved.");
   if (feof(highscore_fp))
     {
       /* write out new_entry at end of file */
-#ifndef BSD4_3
       (void) fseek (highscore_fp, curpos, L_SET);
-#else
-      (void) fseek (highscore_fp, (off_t)curpos, L_SET);
-#endif
       wr_highscore(&new_entry);
     }
   else
@@ -806,17 +588,7 @@ are not saved.");
       entry = new_entry;
       while (!feof(highscore_fp))
 	{
-#ifndef BSD4_3
-#ifdef ATARIST_TC || defined(__TURBOC__)
-	  /* No fseek with negative offset allowed.  */
-	  (void) fseek(highscore_fp, (long)ftell(highscore_fp) -
-		       SCORE_REC_SIZE, L_SET);
-#else
 	  (void) fseek(highscore_fp, -(long)SCORE_REC_SIZE, L_INCR);
-#endif
-#else
-	  (void) fseek(highscore_fp, -(off_t)SCORE_REC_SIZE, L_INCR);
-#endif
 	  wr_highscore(&entry);
 	  /* under unix and VMS, only allow one sex/race/class combo per
 	     person, on single user system, allow any number of entries, but
@@ -832,39 +604,22 @@ are not saved.");
 	    break;
 	  entry = old_entry;
 	  /* must fseek() before can change read/write mode */
-#ifndef BSD4_3
-#ifdef ATARIST_TC
-	  /* No fseek relative to current position allowed.  */
-	  (void) fseek(highscore_fp, (long)ftell(highscore_fp), L_SET);
-#else
 	  (void) fseek(highscore_fp, (long)0, L_INCR);
-#endif
-#else
-	  (void) fseek(highscore_fp, (off_t)0, L_INCR);
-#endif
 	  curpos = ftell (highscore_fp);
 	  rd_highscore(&old_entry);
 	}
       if (feof(highscore_fp))
 	{
-#ifndef BSD4_3
 	  (void) fseek (highscore_fp, curpos, L_SET);
-#else
-	  (void) fseek (highscore_fp, (off_t)curpos, L_SET);
-#endif
 	  wr_highscore(&entry);
 	}
     }
 
-#if !defined(VMS) && !defined(MSDOS) && !defined(AMIGA) && !defined(MAC)
-#ifdef ATARIST_TC
-  /* Flock never called for Atari ST with TC.  */
-#else
+  (void) fflush(highscore_fp);
+#ifdef __EMSCRIPTEN__
+  moria_persist_sync();
+#endif
   (void) flock((int)fileno(highscore_fp), LOCK_UN);
-#endif
-#else
-  (void) fclose (highscore_fp);
-#endif
 }
 
 
@@ -913,10 +668,6 @@ static void kingly()
 /* Handles the gravestone end top-twenty routines	-RAK-	 */
 void exit_game ()
 {
-#ifdef MAC
-  /* Prevent strange things from happening */
-  enablefilemenu(FALSE);
-#endif
 
   /* What happens upon dying.				-RAK-	 */
   msg_print(CNIL);
@@ -931,11 +682,7 @@ void exit_game ()
       print_tomb();
     }
   if (character_generated && !character_saved)
-#ifdef MAC
-    (void) save_char (TRUE);		/* Save the memory at least. */
-#else
     (void) save_char ();		/* Save the memory at least. */
-#endif
   /* add score to scorefile if applicable */
   if (character_generated)
     {
@@ -948,12 +695,5 @@ void exit_game ()
     }
   erase_line (23, 0);
   restore_term ();
-#ifdef MAC
-  /* Undo what has been done */
-  enablefilemenu(TRUE);
-  /* Long jump back into the Mac wrapper, in lieu of exit () */
-  goback();
-#else
   exit (0);
-#endif
 }

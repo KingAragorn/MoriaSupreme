@@ -4,6 +4,8 @@ Moria Supreme is a free, non-commercial hobby roguelike: the ultimate classic Mo
 
 The playable base is [PmoriaPlus](https://github.com/KingAragorn/PmoriaPlus) current `main`: Pmoria 0.98, Christopher J. Petit's modification of Umoria 5.5, with a modern CMake/ncurses build, terminal color, and the macOS AppleClang fixes. This game will not be sold.
 
+Moria Supreme is not a DOS game. The DOS, Atari ST, Amiga, Mac Classic, VMS, and IBM PC port trees are gone. What remains builds with CMake and ncurses on Linux and macOS, and the same sources compile to WebAssembly for a browser. Wilson's original `readme` and the credits in `files/version.hlp` still name the people who wrote those older ports.
+
 ## License
 
 The imported source keeps the Wilson/Koeneke notice:
@@ -92,6 +94,28 @@ MORIA_MONOCHROME=1 ./build/moriasupreme
 Other startup flags are the original ones: `-n` ignores a save file, `-o` and `-r` choose the original or rogue-like key sets, `-s` and `-S` show scores, and `-w` requests wizard mode.
 
 On macOS, if CMake does not find Homebrew's ncurses, configure with `CMAKE_PREFIX_PATH` set to the Homebrew prefix (`/opt/homebrew` or `/usr/local`). The AppleClang `lseek` and `flock` fixes in `source/death.c` are kept.
+
+`source/makefile` is James Wilson's old UNIX makefile. The CMake build above is the one that works. `cmake --build build --target web` runs `web/build.sh` when Emscripten is installed.
+
+## Play in a browser
+
+The browser build is the same C sources, compiled with Emscripten. A small curses shim draws a 24x80 screen and an xterm.js terminal shows it. There is no server. Saves and the score file are stored in the browser with IndexedDB (IDBFS), under the page's origin.
+
+Install the [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html), then:
+
+```sh
+./web/build.sh
+```
+
+That writes a static site to `web/dist/` (`index.html`, `moriasupreme.js`, `moriasupreme.wasm`, `moriasupreme.data`, and xterm.js). Serve that folder with any static host. Opening the html file directly will not load the wasm.
+
+```sh
+python3 -m http.server -d web/dist 8080
+```
+
+Movement is `hjkl`. Ctrl-X saves and exits. Reload the page and the same character comes back. Arrow keys are mapped to `hjkl`.
+
+GitHub Actions (`.github/workflows/pages.yml`) builds `web/dist` and deploys it to GitHub Pages when `main` changes. The repository owner has to turn Pages on once: Settings, Pages, Build and deployment, Source: GitHub Actions. The workflow cannot flip that switch. The site is then `https://<user>.github.io/<repo>/`.
 
 ## Smoke test
 

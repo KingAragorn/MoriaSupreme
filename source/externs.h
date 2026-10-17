@@ -12,34 +12,13 @@
 
 /* Atari TC requires prototypes, but does not have __STDC__.
    Hence, we check for ATARIST_TC here, and define LINT_ARGS if true.  */
-#ifdef ATARIST_TC
-#define LINT_ARGS
-#endif
 
 /* This causes more trouble than it is worth, and very few systems still
    have this bug in their include files.  */
-#if 0
-/* many systems don't define these anywhere */
-#ifndef NeXT
-#ifndef AMIGA
-#if !defined(atarist) || !defined(__GNUC__)
-#ifndef __TURBOC__
-#if defined(USG) || defined(DGUX)
-extern int sprintf();
-#else
-extern char *sprintf();
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
 
 /* to avoid 'psect' problem with VMS declaration of errno */
 #ifndef MORIA_POSIX
-#ifndef VMS
 extern int errno;
-#endif
 #endif
 
 extern char *copyright[5];
@@ -112,23 +91,13 @@ extern int panel_col_min, panel_col_max;
 extern int panel_col_prt, panel_row_prt;
 
 /*  Following are all floor definitions				*/
-#ifdef MAC
-extern cave_type (*cave)[MAX_WIDTH];
-#else
 extern cave_type cave[MAX_HEIGHT][MAX_WIDTH];
-#endif
 
 /* Following are player variables				*/
 extern player_type py;
-#ifdef MACGAME
-extern char *(*player_title)[MAX_PLAYER_LEVEL];
-extern race_type *race;
-extern background_type *background;
-#else
 extern char *player_title[MAX_CLASS][MAX_PLAYER_LEVEL];
 extern race_type race[MAX_RACES];
 extern background_type background[MAX_BACKGROUND];
-#endif
 extern int32u player_exp[MAX_PLAYER_LEVEL];
 extern int16u player_hp[MAX_PLAYER_LEVEL];
 extern int16 char_row;
@@ -140,11 +109,7 @@ extern class_type class[MAX_CLASS];
 extern int16 class_level_adj[MAX_CLASS][MAX_LEV_ADJ];
 
 /* Warriors don't have spells, so there is no entry for them. */
-#ifdef MACGAME
-extern spell_type (*magic_spell)[31];
-#else
 extern spell_type magic_spell[MAX_CLASS-1][31];
-#endif
 extern char *spell_names[62];
 extern int32u spell_learned;	/* Bit field for spells learnt -CJS- */
 extern int32u spell_worked;	/* Bit field for spells tried -CJS- */
@@ -160,27 +125,13 @@ extern int16 total_winner;
 extern int32 max_score;
 
 /* Following are store definitions				*/
-#ifdef MACGAME
-extern owner_type *owners;
-#else
 extern owner_type owners[MAX_OWNERS];
-#endif
-#ifdef MAC
-extern store_type *store;
-#else
 extern store_type store[MAX_STORES];
-#endif
 extern int16u store_choice[MAX_STORES][STORE_CHOICES];
-#ifndef MAC
 extern int (*store_buy[MAX_STORES])();
-#endif
 
 /* Following are treasure arrays	and variables			*/
-#ifdef MACGAME
-extern treasure_type *object_list;
-#else
 extern treasure_type object_list[MAX_OBJECTS];
-#endif
 extern int8u object_ident[OBJECT_IDENT_SIZE];
 extern int16 t_level[MAX_OBJ_LEVEL+1];
 extern inven_type t_list[MAX_TALLOC];
@@ -193,33 +144,16 @@ extern int16 equip_ctr;	/* Cur equipment ctr	*/
 extern int16 tcptr;	/* Cur treasure heap ptr	*/
 
 /* Following are creature arrays and variables			*/
-#ifdef MACGAME
-extern creature_type *c_list;
-#else
 extern creature_type c_list[MAX_CREATURES];
-#endif
 extern monster_type m_list[MAX_MALLOC];
 extern int16 m_level[MAX_MONS_LEVEL+1];
 extern m_attack_type monster_attacks[N_MONS_ATTS];
-#ifdef MAC
-extern recall_type *c_recall;
-#else
 extern recall_type c_recall[MAX_CREATURES];	/* Monster memories. -CJS- */
-#endif
 extern monster_type blank_monster;	/* Blank monster values	*/
 extern int16 mfptr;	/* Cur free monster ptr	*/
 extern int16 mon_tot_mult;	/* # of repro's of creature	*/
 
 /* Following are arrays for descriptive pieces			*/
-#ifdef MACGAME
-extern char **colors;
-extern char **mushrooms;
-extern char **woods;
-extern char **metals;
-extern char **rocks;
-extern char **amulets;
-extern char **syllables;
-#else
 extern char *colors[MAX_COLORS];
 extern char *mushrooms[MAX_MUSH];
 extern char *woods[MAX_WOODS];
@@ -227,7 +161,6 @@ extern char *metals[MAX_METALS];
 extern char *rocks[MAX_ROCKS];
 extern char *amulets[MAX_AMULETS];
 extern char *syllables[MAX_SYLLABLES];
-#endif
 
 extern int8u blows_table[7][6];
 
@@ -242,11 +175,6 @@ extern char last_command;  /* Memory of previous command. */
 /* Track if temporary light about player.  */
 extern int light_flag;
 
-#ifdef MSDOS
-extern int8u	floorsym, wallsym;
-extern int	ansi, saveprompt;
-extern char	moriatop[], moriasav[];
-#endif
 
 /* function return values */
 /* only extern functions declared here, static functions declared inside
@@ -259,13 +187,6 @@ extern char	moriatop[], moriasav[];
    specifically how to handle promotion of parameters.  In my reading of
    the standard, I believe that Gnu C's behaviour is correct.  */
 
-#ifdef ATARI_ST
-/* atarist.c */
-int check_input(int microsec);
-void user_name(char * buf);
-int access(char * name, int dum);
-void chmod(char * name, int mode); /* dummy function */
-#endif
 
 /* create.c */
 void create_character(void);
@@ -312,25 +233,11 @@ void init_scorefile(void);
 void read_times(void);
 void helpfile(char *);
 void print_objects(void);
-#ifdef MAC
-int file_character(void);
-#else
 int file_character(char *);
-#endif
 
 /* generate.c */
 void generate_cave(void);
 
-#ifdef VMS
-/* getch.c */
-int kbhit (void);
-void user_name (char *);
-void vms_crmode (void);
-void vms_nocrmode (void);
-int opengetch (void);
-int closegetch (void);
-char vms_getch (void);
-#endif
 
 /* help.c */
 void ident_char(void);
@@ -567,26 +474,6 @@ void look(void);
 void throw_object(int);
 void bash(void);
 
-#ifdef MSDOS
-/* ms_misc.c */
-void user_name(char *);
-char *getlogin(void);
-#ifdef __TURBOC__
-void sleep(unsigned);
-#else
-unsigned int sleep(int);
-#endif
-void error(char *, ...);
-void warn(char *, ...);
-void msdos_init(void);
-void msdos_raw(void);
-void msdos_noraw(void);
-int bios_getch(void);
-int msdos_getch(void);
-void bios_clear(void);
-void msdos_intro(void);
-void bios_clear(void);
-#endif
 
 /* potions.c */
 void quaff(void);
@@ -604,11 +491,7 @@ void set_rnd_seed(int32u);
 int32 rnd(void);
 
 /* save.c */
-#ifdef MAC
-int save_char(int);
-#else
 int save_char(void);
-#endif
 int _save_char(char *);
 int get_char(int *);
 #if defined(STDIO_LOADED)
@@ -638,9 +521,6 @@ int weaponsmith(int);
 int temple(int);
 int alchemist(int);
 int magic_shop(int);
-#ifdef MAC
-int store_buy(int, int);
-#endif
 
 /* signals.c */
 void nosignals(void);
@@ -759,17 +639,10 @@ int town_sneak_p(void);
 
 /* treasur2.c */
 
-#ifdef VMS
-/* uexit.c */
-void uexit (int);
-#endif
 
 #ifdef unix
 /* unix.c */
 int check_input(int);
-#if 0
-int system_cmd(char *);
-#endif
 void user_name(char *);
 int tilde(char *, char *);
 /* only declare this if stdio.h has been previously included, STDIO_LOADED
@@ -793,13 +666,6 @@ void wizard_create(void);
 #else
 /* !defined (LINT_ARGS) */
 
-#ifdef ATARI_ST
-/* atarist.c */
-int check_input ();
-void user_name ();
-int access ();
-void chmod ();
-#endif
 
 /* create.c */
 void create_character();
@@ -851,16 +717,6 @@ int file_character();
 /* generate.c */
 void generate_cave();
 
-#ifdef VMS
-/* getch.c */
-int kbhit ();
-void user_name ();
-void vms_crmode ();
-void vms_nocrmode ();
-int opengetch ();
-int closegetch ();
-char vms_getch ();
-#endif
 
 /* help.c */
 void ident_char();
@@ -1097,33 +953,6 @@ void disarm_trap();
 void look();
 void bash();
 
-#ifdef MSDOS
-/* ms_misc.c */
-void user_name();
-char *getlogin();
-#ifdef __TURBOC__
-void sleep();
-#else
-unsigned int sleep();
-#endif
-#if 0
-void error();
-void warn();
-#else
-/* Because an empty parameter list in a declaration can not match a parameter
-   list with an elipsis in a definition.  */
-void error (char *fmt, ...);
-void warn (char *fmt, ...);
-#endif
-void msdos_init();
-void msdos_raw();
-void msdos_noraw();
-int bios_getch();
-int msdos_getch();
-void bios_clear();
-void msdos_intro();
-void bios_clear();
-#endif
 
 /* potions.c */
 void quaff();
@@ -1171,9 +1000,6 @@ int weaponsmith();
 int temple();
 int alchemist();
 int magic_shop();
-#ifdef MAC
-int store_buy();
-#endif
 
 /* signals.c */
 void nosignals();
@@ -1291,17 +1117,10 @@ int town_sneak_p();
 
 /* treasur2.c */
 
-#ifdef VMS
-/* uexit.c */
-void uexit ();
-#endif
 
 #ifdef unix
 /* unix.c */
 int check_input();
-#if 0
-int system_cmd();
-#endif
 void user_name();
 int tilde();
 /* only declare this if stdio.h has been previously included, STDIO_LOADED
@@ -1331,6 +1150,3 @@ void wizard_create();
 #endif
 
 /* st-stuff.c for the atari ST */
-#if defined(atarist) && defined(__GNUC__)
-extern char extended_file_name[80];
-#endif

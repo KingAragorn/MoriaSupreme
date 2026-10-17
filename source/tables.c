@@ -22,17 +22,10 @@ char  days[7][40] = { "SUN:XXXXXXXXXXXXXXXXXXXXXXXX",
 		    "SAT:XXXXXXXXXXXXXXXXXXXXXXXX" };
 #endif
 
-#ifdef MAC
-store_type *store;
-#else
 store_type store[MAX_STORES];
-#endif
 
 /* Store owners have different characteristics for pricing and haggling*/
 /* Note: Store owners should be added in groups, one for each store    */
-#ifdef MACGAME
-owner_type *owners;
-#else
 owner_type owners[MAX_OWNERS] = {
 {"Erick the Honest       (Human)      General Store",
 	 2500,	175,  108,    4, 0, 12},
@@ -71,7 +64,6 @@ owner_type owners[MAX_OWNERS] = {
 {"Inglorian the Mage     (Human?)     Magic Shop"   ,
 	32000,	200,  110,    7, 0, 10}
 };
-#endif
 
 /* Buying and selling adjustments for store owner race (row) versus
    player race (column). 100 is par; higher means the player pays more.
@@ -115,7 +107,6 @@ int16u store_choice[MAX_STORES][STORE_CHOICES] = {
 	293,294,295,308,269,290,319,282}
 };
 
-#ifndef MAC
 /* MPW doesn't seem to handle this very well, so replace store_buy array
    with a function call on mac */
 /* functions defined in sets.c */
@@ -125,21 +116,9 @@ extern int general_store(), armory(), weaponsmith(), temple(),
 /* Each store will buy only certain items, based on TVAL */
 int (*store_buy[MAX_STORES])() = {
        general_store, armory, weaponsmith, temple, alchemist, magic_shop};
-#endif
 
 /* Following are arrays for descriptive pieces			*/
 
-#ifdef MACGAME
-
-char **colors;
-char **mushrooms;
-char **woods;
-char **metals;
-char **rocks;
-char **amulets;
-char **syllables;
-
-#else
 
 char *colors[MAX_COLORS] = {
 /* Do not move the first three */
@@ -209,7 +188,6 @@ char *syllables[MAX_SYLLABLES] = {
   "vom","wah","wed","werg","wex","whon","wun","x",
   "yerg","yp","zun"
 };
-#endif
 
 /* used to calculate the number of blows the player gets in combat */
 int8u blows_table[7][6] = {

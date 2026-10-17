@@ -19,3 +19,5 @@ Gnome, Dryad, Druid, Bard, and Adventurer were written for this tree. No Imoria,
 The town hall, hidden door, bank, trade bars, bard instruments, temple patrons, notice-board jobs, and the druid's grove book are also original code and original text. The ideas come from public descriptions: Omega's guilds, gods, and quests, cut down to one town; Imoria's hidden guild door and a bank that changes coin; the MacMoria note that a druid could use both clerical and magic-user spells. No tables, prayers, deity names, or source from those games were copied.
 
 The project will never be sold.
+
+The DOS, Atari ST, Amiga, Mac Classic, VMS, and IBM PC sources are no longer in this tree. The people who wrote those ports are still named in `files/version.hlp` and in James Wilson's `readme`.

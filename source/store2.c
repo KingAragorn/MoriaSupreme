@@ -6,10 +6,6 @@
    not for profit purposes provided that this copyright and statement are
    included in all such copies. */
 
-#ifdef __TURBOC__
-#include	<stdio.h>
-#include	<stdlib.h>
-#endif /* __TURBOC__ */
  
 #include "config.h"
 #include "constant.h"
@@ -17,9 +13,7 @@
 #include "externs.h"
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#endif
 #else
 #include <strings.h>
 #endif
@@ -49,10 +43,6 @@ static int store_purchase(int, int *);
 static int store_sell(int, int *);
 #endif
 
-#ifdef ATARIST_TC
-/* Include this to get prototypes for standard library functions.  */
-#include <stdlib.h>
-#endif
 
 long atol();
 
@@ -749,8 +739,7 @@ inven_type *item;
 	  last_store_inc = 0;
 	  cur_ask   = max_gold;
 	  final_ask = max_gold;
-	  msg_print("I am sorry, but I have not the money to afford such \
-a fine item.");
+	  msg_print("I am sorry, but I have not the money to afford such  a fine item.");
 	  didnt_haggle = TRUE;
 	}
       else
@@ -764,8 +753,7 @@ a fine item.");
 	  /* go right to final price if player has bargained well */
           if (noneedtobargain(store_num, final_ask))
 	    {
-	      msg_print("After a long bargaining session, you agree upon \
-the price.");
+	      msg_print("After a long bargaining session, you agree upon  the price.");
               cur_ask = final_ask;
 	      comment = "Final offer";
 	      didnt_haggle = TRUE;
@@ -1000,11 +988,7 @@ int store_num, *cur_top;
   last_item = -1;
   for (counter = 0; counter < inven_ctr; counter++)
     {
-#ifdef MAC
-      flag = store_buy(store_num, (inventory[counter].tval));
-#else
       flag = (*store_buy[store_num])(inventory[counter].tval);
-#endif
       mask[counter] = flag;
       if (flag)
 	{

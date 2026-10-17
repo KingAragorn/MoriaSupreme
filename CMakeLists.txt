@@ -3,8 +3,10 @@ project(MoriaSupreme C)
 
 include(GNUInstallDirs)
 
-set(CURSES_NEED_NCURSES TRUE)
-find_package(Curses REQUIRED)
+if(NOT EMSCRIPTEN)
+  set(CURSES_NEED_NCURSES TRUE)
+  find_package(Curses REQUIRED)
+endif()
 
 set(PMORIA_SOURCES
   source/main.c
@@ -54,14 +56,36 @@ set(PMORIA_SOURCES
 add_executable(moriasupreme ${PMORIA_SOURCES})
 target_include_directories(moriasupreme PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/source
-  ${CURSES_INCLUDE_DIRS}
 )
-target_compile_definitions(moriasupreme PRIVATE
-  unix
-  "MORIA_LIB_SOURCE=\"${CMAKE_SOURCE_DIR}/files\""
-  "MORIA_LIB_DEFAULT=\"${CMAKE_INSTALL_FULL_DATADIR}/moriasupreme\""
-)
-target_link_libraries(moriasupreme PRIVATE ${CURSES_LIBRARIES})
+target_compile_definitions(moriasupreme PRIVATE unix)
+if(EMSCRIPTEN)
+  target_sources(moriasupreme PRIVATE web/curses_shim.c web/persist.c)
+  target_include_directories(moriasupreme BEFORE PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/web
+  )
+  target_compile_definitions(moriasupreme PRIVATE
+    "MORIA_LIB_SOURCE=\"/files\""
+    "MORIA_LIB_DEFAULT=\"/files\""
+  )
+  # wasm32 time_t is long long. The K&R sources pass long* where a POSIX
+  # prototype now says time_t*. NULL and the values are unchanged.
+  target_compile_options(moriasupreme PRIVATE -Wno-incompatible-pointer-types)
+  set_target_properties(moriasupreme PROPERTIES
+    LINK_FLAGS "-sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -sSTACK_SIZE=1048576 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432 -sFORCE_FILESYSTEM=1 -sINVOKE_RUN=0 -sEXIT_RUNTIME=1 -sEXPORTED_FUNCTIONS=_main,_moria_push_key -sEXPORTED_RUNTIME_METHODS=FS,callMain,ccall -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/files@/files"
+  )
+else()
+  target_include_directories(moriasupreme PRIVATE ${CURSES_INCLUDE_DIRS})
+  target_compile_definitions(moriasupreme PRIVATE
+    "MORIA_LIB_SOURCE=\"${CMAKE_SOURCE_DIR}/files\""
+    "MORIA_LIB_DEFAULT=\"${CMAKE_INSTALL_FULL_DATADIR}/moriasupreme\""
+  )
+  target_link_libraries(moriasupreme PRIVATE ${CURSES_LIBRARIES})
+  add_custom_target(web
+    COMMAND /bin/sh ${CMAKE_SOURCE_DIR}/web/build.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    USES_TERMINAL
+  )
+endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
   target_compile_options(moriasupreme PRIVATE

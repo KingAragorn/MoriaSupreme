@@ -12,24 +12,10 @@
 #include "externs.h"
 
 #if defined(USG) && !defined(VMS) && !defined(MAC)
-#if !defined(ATARIST_MWC) && !defined(AMIGA)
-#if !defined(__TURBOC__)
 #include <memory.h>
-#else
-#ifndef ATARIST_TC
-#include <mem.h>
-#endif
-#endif
-#endif
 #endif
 
-#if defined(MAC)
-#include <string.h>
-#endif
 
-#ifdef ATARIST_TC
-#include <string.h>
-#endif
 
 typedef struct coords {
   int x, y;
@@ -126,13 +112,7 @@ static void blank_cave()
 #ifndef USG
   bzero ((char *)&cave[0][0], sizeof (cave));
 #else
-#ifdef MAC
-  /* On the mac, cave is a pointer, so sizeof(cave) = 4! */
-  (void)memset((char *)&cave[0][0], 0,
-	       (long) sizeof(cave_type) * MAX_HEIGHT * MAX_WIDTH);
-#else
   (void)memset((char *)&cave[0][0], 0, sizeof (cave));
-#endif
 #endif
 }
 
@@ -1281,9 +1261,6 @@ static void cave_gen()
 	  else
 	    build_room(yloc[k], xloc[k]);
 	  k++;
-#ifdef MAC
-	  SystemTask ();
-#endif
 	}
   for (i = 0; i < k; i++)
     {
@@ -1308,9 +1285,6 @@ static void cave_gen()
       x2 = xloc[i+1];
       build_tunnel(y2, x2, y1, x1);
     }
-#ifdef MAC
-  SystemTask ();
-#endif
   fill_cave(GRANITE_WALL);
   for (i = 0; i < DUN_STR_MAG; i++)
     place_streamer(MAGMA_WALL, DUN_STR_MC);
@@ -1325,9 +1299,6 @@ static void cave_gen()
       try_door(doorstk[i].y-1, doorstk[i].x);
       try_door(doorstk[i].y+1, doorstk[i].x);
     }
-#ifdef MAC
-  SystemTask ();
-#endif
   alloc_level = (dun_level/3);
   if (alloc_level < 2)
     alloc_level = 2;
@@ -1447,9 +1418,6 @@ static void town_gen()
 		c_ptr->pl = TRUE;
 	      c_ptr++;
 	    }
-#ifdef MAC
-	  SystemTask ();
-#endif
 	}
       alloc_monster(MIN_MALLOC_TN, 3, TRUE);
     }
@@ -1463,9 +1431,6 @@ static void town_gen()
 	      c_ptr->pl = TRUE;
 	      c_ptr++;
 	    }
-#ifdef MAC
-	  SystemTask ();
-#endif
 	}
       alloc_monster(MIN_MALLOC_TD, 3, TRUE);
     }
@@ -1484,9 +1449,6 @@ void generate_cave()
   char_row = -1;
   char_col = -1;
 
-#ifdef MAC
-  macbeginwait ();
-#endif
 
   tlink();
   mlink();
@@ -1512,7 +1474,4 @@ void generate_cave()
       panel_col = max_panel_cols;
       cave_gen();
     }
-#ifdef MAC
-  macendwait ();
-#endif
 }

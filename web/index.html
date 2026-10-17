@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moria Supreme</title>
+  <link rel="stylesheet" href="vendor/xterm.min.css">
+  <style>
+    html, body { margin: 0; height: 100%; background: #111; color: #ddd; }
+    body { font-family: Georgia, serif; display: flex; flex-direction: column; align-items: center; }
+    header { width: min(100%, 980px); padding: 10px 16px 0; box-sizing: border-box; }
+    h1 { font-size: 1.15rem; font-weight: normal; margin: 0 0 4px; letter-spacing: 0.04em; }
+    p { margin: 0 0 8px; font-family: sans-serif; font-size: 13px; color: #aaa; }
+    #screen { width: min(100%, 980px); height: calc(100vh - 72px); padding: 4px 0 12px; box-sizing: border-box; }
+    #screen .xterm { height: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Moria Supreme</h1>
+    <p>hjkl moves. Ctrl-X saves. The save and the score file stay in this browser.</p>
+  </header>
+  <div id="screen"></div>
+  <script src="vendor/xterm.min.js"></script>
+  <script>
+    var term = new Terminal({
+      cols: 80,
+      rows: 24,
+      cursorBlink: true,
+      fontFamily: "DejaVu Sans Mono, ui-monospace, monospace",
+      fontSize: 15,
+      scrollback: 0,
+      theme: { background: "#0c0c0c", foreground: "#d0d0d0", cursor: "#d0d0d0" }
+    });
+    term.open(document.getElementById("screen"));
+    term.focus();
+    window.term = term;
+    window.moriaWrite = function (s) { term.write(s); };
+    window.moriaScreen = function () {
+      var lines = [];
+      var buf = term.buffer.active;
+      var y;
+      for (y = 0; y < term.rows; y++)
+        lines.push(buf.getLine(y).translateToString(true));
+      return lines.join("\n");
+    };
+    window.moriaExited = null;
+
+    function pushKey(code) {
+      if (window.Module && typeof Module.ccall === "function")
+        Module.ccall("moria_push_key", null, ["number"], [code]);
+      else
+        (window.moriaPending = window.moriaPending || []).push(code);
+    }
+
+    term.onData(function (data) {
+      var arrows = { "\u001b[A": 107, "\u001b[B": 106, "\u001b[D": 104, "\u001b[C": 108,
+                     "\u001bOA": 107, "\u001bOB": 106, "\u001bOD": 104, "\u001bOC": 108 };
+      if (arrows[data] !== undefined) {
+        pushKey(arrows[data]);
+        return;
+      }
+      var i;
+      for (i = 0; i < data.length; i++)
+        pushKey(data.charCodeAt(i));
+    });
+
+    var Module = {
+      print: function (text) { term.write(String(text).replace(/\n/g, "\r\n")); },
+      printErr: function (text) { console.error(text); },
+      locateFile: function (path) { return path; },
+      onExit: function (code) { window.moriaExited = code; },
+      onRuntimeInitialized: function () {
+        var FS = Module.FS;
+        // Emscripten's default HOME is /home/web_user. Saves and scores go there.
+        try { FS.mkdir("/home"); } catch (e) {}
+        try { FS.mkdir("/home/web_user"); } catch (e) {}
+        FS.mount(FS.filesystems.IDBFS, {}, "/home/web_user");
+        FS.syncfs(true, function (err) {
+          var queued, i;
+          if (err)
+            console.error(err);
+          try { FS.mkdir("/home/web_user/.moriasupreme"); } catch (e2) {}
+          queued = window.moriaPending || [];
+          window.moriaPending = [];
+          for (i = 0; i < queued.length; i++)
+            Module.ccall("moria_push_key", null, ["number"], [queued[i]]);
+          Module.callMain([]);
+        });
+      }
+    };
+  </script>
+  <script src="moriasupreme.js"></script>
+</body>
+</html>

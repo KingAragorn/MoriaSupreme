@@ -18,40 +18,12 @@
 
 /* Signals have no significance on the Mac */
 
-#ifdef MAC
 
-void nosignals()
-{
-}
-
-void signals()
-{
-}
-
-void init_signals()
-{
-}
-
-#else /* a non-Mac system */
-
-#ifdef ATARIST_MWC
-/* need these for atari st, but for unix, must include signals.h first,
-   or else suspend won't be properly declared */
-#include "types.h"
-#include "externs.h"
-#endif
 
 /* skip most of the file on an ATARI ST */
 /* commented away most single handling for Atari ST TC too, as this
    doesn't work as it should.  */
-#if !defined(ATARIST_MWC) && !defined(ATARIST_TC)
 
-#if defined(SYS_V) && defined(lint)
-/* for AIX, prevent hundreds of unnecessary lint errors, define before
-   signal.h is included */
-#define _h_IEEETRAP
-typedef struct { int stuff; } fpvmach;
-#endif
 
 /* must include before externs.h, because that uses SIGTSTP */
 #include <signal.h>
@@ -66,23 +38,15 @@ typedef struct { int stuff; } fpvmach;
 #endif
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#endif
 #else
 #include <strings.h>
 #endif
 
 #ifndef MORIA_POSIX
-#ifndef VMS
 #ifdef USG
 void exit();
-#ifdef __TURBOC__
-void sleep();
-#else
 unsigned sleep();
-#endif
-#endif
 #endif
 #endif
 
@@ -103,11 +67,7 @@ struct sigcontext *scp;
 static void signal_handler(int sig)
 {
 #else
-#if defined(__TURBOC__) || defined(AMIGA)
-static void signal_handler(sig)
-#else
 static int signal_handler(sig)
-#endif
 int sig;
 {
 #endif
@@ -123,9 +83,7 @@ int sig;
 
   /* Allow player to think twice. Wizard may force a core dump. */
   if (sig == SIGINT
-#if !defined(MSDOS) && !defined(AMIGA) && !defined(ATARIST_TC)
       || sig == SIGQUIT
-#endif
       )
     {
       if (death)
@@ -180,16 +138,13 @@ int sig;
       (void) _save_char(savefile);	/* Quietly save the memory anyway. */
     }
   restore_term();
-#if !defined(MSDOS) && !defined(AMIGA) && !defined(ATARIST_TC)
   /* always generate a core dump */
   (void) moria_signal(sig, SIG_DFL);
   (void) kill(getpid(), sig);
   (void) sleep(5);
-#endif
   exit(1);
 }
 
-#endif /* ATARIST_MWC, ATARIST_TC */
 
 #ifndef USG
 static int mask;
@@ -197,83 +152,39 @@ static int mask;
 
 void nosignals()
 {
-#if !defined(ATARIST_MWC) && !defined(ATARIST_TC)
 #ifdef SIGTSTP
-#if defined(atarist) && defined(__GNUC__)
-  (void) moria_signal(SIGTSTP, (__Sigfunc)SIG_IGN);
-#else
   (void) moria_signal(SIGTSTP, SIG_IGN);
-#endif
 #ifndef USG
   mask = sigsetmask(0);
 #endif
 #endif
   if (error_sig < 0)
     error_sig = 0;
-#endif
 }
 
 void signals()
 {
-#if !defined(ATARIST_MWC) && !defined(ATARIST_TC)
 #ifdef SIGTSTP
-#if defined(atarist) && defined(__GNUC__)
-  (void) moria_signal(SIGTSTP, (__Sigfunc)suspend);
-#else
   (void) moria_signal(SIGTSTP, suspend);
-#endif
 #ifndef USG
   (void) sigsetmask(mask);
 #endif
 #endif
   if (error_sig == 0)
     error_sig = -1;
-#endif
 }
 
 
 void init_signals()
 {
-#if !defined(ATARIST_MWC) && !defined(ATARIST_TC)
   /* No signals for Atari ST compiled with MWC or TC.  */
   (void) moria_signal(SIGINT, signal_handler);
 
-#if defined(atarist) && defined(__GNUC__)
-  /* Atari ST compiled with GNUC has most signals, but we need a cast
-     in every call to signal.  */
-  (void) moria_signal(SIGINT, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGQUIT, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGTSTP,(__Sigfunc)SIG_IGN);
-  (void) moria_signal(SIGILL, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGHUP, (__Sigfunc)SIG_IGN);
-  (void) moria_signal(SIGTRAP,(__Sigfunc)signal_handler);
-  (void) moria_signal(SIGIOT, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGEMT, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGKILL, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGBUS, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGSEGV, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGSYS, (__Sigfunc)signal_handler);
-  (void) moria_signal(SIGTERM,(__Sigfunc)signal_handler);
-  (void) moria_signal(SIGPIPE, (__Sigfunc)signal_handler);
-
-#else
   /* Everybody except the atari st.  */
   (void) moria_signal(SIGINT, signal_handler);
   (void) moria_signal(SIGFPE, signal_handler);
 
-#if defined(MSDOS)
-  /* many fewer signals under MSDOS */
-#else
 
-#ifdef AMIGA
-/*  (void) moria_signal(SIGINT, signal_handler); */
-  (void) moria_signal(SIGTERM, signal_handler);
-  (void) moria_signal(SIGABRT, signal_handler);
-/*  (void) moria_signal(SIGFPE, signal_handler); */
-  (void) moria_signal(SIGILL, signal_handler);
-  (void) moria_signal(SIGSEGV, signal_handler);
-
-#else
 
   /* Everybody except Atari, MSDOS, and Amiga.  */
   /* Ignore HANGUP, and let the EOF code take care of this case. */
@@ -300,48 +211,29 @@ void init_signals()
 #ifdef SIGPWR /* SYSV */
   (void) moria_signal(SIGPWR, signal_handler);
 #endif
-#endif
-#endif
-#endif
-#endif
 }
 
 void ignore_signals()
 {
-#if !defined(ATARIST_MWC)
   (void) moria_signal(SIGINT, SIG_IGN);
 #ifdef SIGQUIT
   (void) moria_signal(SIGQUIT, SIG_IGN);
-#endif
 #endif
 }
 
 void default_signals()
 {
-#if !defined(ATARIST_MWC)
   (void) moria_signal(SIGINT, SIG_DFL);
 #ifdef SIGQUIT
   (void) moria_signal(SIGQUIT, SIG_DFL);
-#endif
 #endif
 }
 
 void restore_signals()
 {
-#if !defined(ATARIST_MWC)
-#if defined(atarist) && defined(__GNUC__)
-  (void) moria_signal(SIGINT, (__Sigfunc)signal_handler);
-#else
   (void) moria_signal(SIGINT, signal_handler);
-#endif
 #ifdef SIGQUIT
-#if defined(atarist) && defined(__GNUC__)
-  (void) moria_signal(SIGQUIT, (__Sigfunc)signal_handler);
-#else
   (void) moria_signal(SIGQUIT, signal_handler);
-#endif
-#endif
 #endif
 }
 
-#endif /* big Mac conditional */

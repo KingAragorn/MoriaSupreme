@@ -6,10 +6,6 @@
    not for profit purposes provided that this copyright and statement are
    included in all such copies. */
 
-#ifdef __TURBOC__
-#include	<stdio.h>
-#include	<stdlib.h>
-#endif
 
 #include "config.h"
 #include "constant.h"
@@ -17,9 +13,7 @@
 #include "externs.h"
 
 #ifdef USG
-#ifndef ATARIST_MWC
 #include <string.h>
-#endif
 #else
 #include <strings.h>
 #endif
@@ -51,9 +45,6 @@ int dir;
   int y, x;
   monster_type *m_ptr;
   vtype out_val, m_name;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   if ((py.flags.confused > 0) &&    /* Confused?	     */
       (randint(4) > 1))		    /* 75% random movement   */
@@ -107,11 +98,7 @@ int dir;
   else if (i_ptr->tval != TV_NOTHING || py.misc.pclass==CLASS_MONK) 
     /* Let Monks dig w/bare hands */
     {
-#ifdef ATARIST_MWC
-      if ((holder = TR_TUNNEL) & i_ptr->flags)
-#else
       if (TR_TUNNEL & i_ptr->flags)
-#endif
 	tabil += 25 + i_ptr->p1*50;
       else
 	{
@@ -336,16 +323,13 @@ void disarm_trap()
    Consider the following situation:
 
      @....			    X	X   X	X   X
-     .##..			   / \ / \ / \ / \ / \
-     .....			  X @ X . X . X 1 X . X
+     .##..			   / \ / \ / \ / \ /       .....			  X @ X . X . X 1 X . X
 				   \ / \ / \ / \ / \ /
 				    X	X   X	X   X
-	   Expanded view, with	   / \ / \ / \ / \ / \
-	   diamonds inscribed	  X . X # X # X 2 X . X
+	   Expanded view, with	   / \ / \ / \ / \ /  	   diamonds inscribed	  X . X # X # X 2 X . X
 	   about each point,	   \ / \ / \ / \ / \ /
 	   and some locations	    X	X   X	X   X
-	   numbered.		   / \ / \ / \ / \ / \
-				  X . X . X . X 3 X 4 X
+	   numbered.		   / \ / \ / \ / \ /  				  X . X . X . X 3 X 4 X
 				   \ / \ / \ / \ / \ /
 				    X	X   X	X   X
 	- Location 1 is fully visible.
@@ -709,9 +693,6 @@ int item_val;
 inven_type *t_ptr;
 {
   register inven_type *i_ptr;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   i_ptr = &inventory[item_val];
   *t_ptr = *i_ptr;
@@ -720,11 +701,7 @@ inven_type *t_ptr;
       t_ptr->number = 1;
       i_ptr->number--;
       inven_weight -= i_ptr->weight;
-#ifdef ATARIST_MWC
-      py.flags.status |= (holder = PY_STR_WGT);
-#else
       py.flags.status |= PY_STR_WGT;
-#endif
     }
   else
     inven_destroy(item_val);

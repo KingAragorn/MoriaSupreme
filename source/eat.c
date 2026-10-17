@@ -25,9 +25,6 @@ void eat()
   register struct flags *f_ptr;
   register struct misc *m_ptr;
   register inven_type *i_ptr;
-#ifdef ATARIST_MWC
-  int32u holder;
-#endif
 
   free_turn_flag = TRUE;
   if (inven_ctr == 0)
@@ -101,24 +98,6 @@ void eat()
 	      ident = TRUE;
 	      lose_con();
 	      break;
-#if 0  /* 12 through 15 are not used */
-	    case 12:
-	      ident = TRUE;
-	      lose_int();
-	      break;
-	    case 13:
-	      ident = TRUE;
-	      lose_wis();
-	      break;
-	    case 14:
-	      ident = TRUE;
-	      lose_dex();
-	      break;
-	    case 15:
-	      ident = TRUE;
-	      lose_chr();
-	      break;
-#endif
 	    case 16:
 	      if (res_stat (A_STR))
 		{
@@ -170,11 +149,6 @@ void eat()
 	    case 24:
 	      ident = hp_player(randint(18));
 	      break;
-#if 0  /* 25 is not used */
-	    case 25:
-	      ident = hp_player(damroll(3, 6));
-	      break;
-#endif
 	    case 26:
 	      ident = hp_player(damroll(3, 12));
 	      break;
@@ -182,20 +156,6 @@ void eat()
 	      take_hit(randint(18), "poisonous food.");
 	      ident = TRUE;
 	      break;
-#if 0 /* 28 through 30 are not used */
-	    case 28:
-	      take_hit(randint(8), "poisonous food.");
-	      ident = TRUE;
-	      break;
-	    case 29:
-	      take_hit(damroll(2, 8), "poisonous food.");
-	      ident = TRUE;
-	      break;
-	    case 30:
-	      take_hit(damroll(3, 8), "poisonous food.");
-	      ident = TRUE;
-	      break;
-#endif
 	    default:
 	      msg_print("Internal error in eat()");
 	      break;
@@ -219,11 +179,7 @@ void eat()
       else if (!known1_p(i_ptr))
 	sample (i_ptr);
       add_food(i_ptr->p1);
-#ifdef ATARIST_MWC
-      py.flags.status &= ~(holder = PY_WEAK|PY_HUNGRY);
-#else
       py.flags.status &= ~(PY_WEAK|PY_HUNGRY);
-#endif
       prt_hunger();
       desc_remain(item_val);
       inven_destroy(item_val);
