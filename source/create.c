@@ -29,6 +29,7 @@ static void get_sex(void);
 static void get_ahw(void);
 static void get_class(void);
 static void choose_personality(void);
+static void choose_challenges(void);
 static int monval(int8u);
 static void get_money(void);
 #endif
@@ -546,6 +547,38 @@ static void choose_personality()
   put_buffer(personality_name((int)personality), 6, 15);
 }
 
+/* Four birth questions, each off unless the player answers y. The ego
+   option reshuffles Moria's own ego items. It does not add a list of
+   named artifacts. */
+static void choose_challenges()
+{
+  birth_rand_ego = 0;
+  birth_ironman = 0;
+  birth_no_sell = 0;
+  birth_connected = 0;
+  ego_seed = 0;
+  clear_from(19);
+  put_buffer("Birth challenges. Answer n to leave each one off.", 19, 2);
+  if (get_check("Randomized ego items?"))
+    birth_rand_ego = 1;
+  if (get_check("Ironman stairs?"))
+    birth_ironman = 1;
+  if (get_check("No selling?"))
+    birth_no_sell = 1;
+  if (get_check("Connected stairs?"))
+    birth_connected = 1;
+  if (birth_rand_ego)
+    {
+      ego_seed = (int32)randint(20000) * 100000L + (int32)randint(99999);
+      if (ego_seed == 0)
+	ego_seed = 1;
+      ego_prepare();
+    }
+  clear_from(19);
+  put_buffer("Challenges  :", 8, 1);
+  put_buffer(challenge_text(), 8, 15);
+}
+
 /* Given a stat value, return a monetary value, which affects the amount
    of gold a player has. */
 static int monval (i)
@@ -619,6 +652,7 @@ void create_character()
 
   get_class();
   choose_personality();
+  choose_challenges();
   get_money();
   put_stats();
   put_misc2();

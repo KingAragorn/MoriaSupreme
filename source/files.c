@@ -327,8 +327,9 @@ char *filename1;
       (void) fprintf(file1, "    Cur Mana%8s %6d\n", colon, py.misc.cmana);
       (void) fprintf(file1, "%29sGold%8s %6ld\n", blank, colon,
 		     py.misc.au);
-      (void) fprintf(file1, " Temperament : %s\n\n",
+      (void) fprintf(file1, " Temperament : %s\n",
 		     personality_name((int)personality));
+      (void) fprintf(file1, " Challenges  : %s\n\n", challenge_text());
 
       p_ptr = &py.misc;
       xbth = p_ptr->bth + p_ptr->ptohit * BTH_PLUS_ADJ
@@ -365,6 +366,20 @@ char *filename1;
       (void) fprintf(file1, "Character Background\n");
       for (i = 0; i < 4; i++)
 	(void) fprintf(file1, " %s\n", py.misc.history[i]);
+      (void) fprintf(file1, "\nCharacter history\n");
+      if (history_ctr <= 0)
+	(void) fprintf(file1, " None recorded.\n");
+      else
+	for (i = 0; i < (int)history_ctr; i++)
+	  {
+	    if (history_log[i].depth > 0)
+	      (void) fprintf(file1, " %6ld  level %-4d %s\n",
+			     (long)history_log[i].turn,
+			     (int)history_log[i].depth, history_log[i].note);
+	    else
+	      (void) fprintf(file1, " %6ld  town      %s\n",
+			     (long)history_log[i].turn, history_log[i].note);
+	  }
       /* Write out the equipment list.	     */
       j = 0;
       (void) fprintf(file1, "\n  [Character's Equipment List]\n\n");

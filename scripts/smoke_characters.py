@@ -244,6 +244,14 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
         if not session.wait_for("temperament"):
             return False, "temperament prompt missing", session
         session.send("a")
+        session.pump(0.15)
+        if "-more-" in session.text():
+            session.send(" ")
+        for prompt in ("Randomized ego", "Ironman stairs", "No selling",
+                       "Connected stairs"):
+            if not session.wait_for(prompt):
+                return False, prompt + " prompt missing", session
+            session.send("n")
         if not session.wait_for("player's name"):
             return False, "name prompt missing", session
         session.send("\r")
@@ -254,6 +262,8 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
         class_field = lines[5][15:].strip()
         if not race_field.startswith(race) or not class_field.startswith(class_title):
             return False, "sheet shows %r / %r" % (race_field, class_field), session
+        if len(lines) < 9 or "none" not in lines[8]:
+            return False, "challenges not off", session
         if shots is not None:
             shots["sheet_screen"] = pyte.Screen(COLS, ROWS)
             shots["sheet_screen"].buffer = session.screen.buffer

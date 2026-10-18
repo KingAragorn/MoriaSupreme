@@ -169,6 +169,44 @@ int f, l;
 #endif
 #endif
 
+static int score_cls(score)
+high_scores *score;
+{
+  return (int)(score->class & 0x0F);
+}
+
+/* Challenge letters sit in the killed-by column: I ironman, N no
+   selling, C connected stairs, E randomized ego items. No letters
+   means an older score, or a game with every option off. */
+static void score_killed(buf, score)
+char *buf;
+high_scores *score;
+{
+  char tag[6];
+  int chal, n, room;
+
+  chal = (int)(score->class >> 4);
+  n = 0;
+  if (chal & CHAL_IRON)
+    tag[n++] = 'I';
+  if (chal & CHAL_SELL)
+    tag[n++] = 'N';
+  if (chal & CHAL_STAIR)
+    tag[n++] = 'C';
+  if (chal & CHAL_EGO)
+    tag[n++] = 'E';
+  tag[n] = '\0';
+  if (n == 0)
+    (void) sprintf(buf, "%-.22s", score->died_from);
+  else
+    {
+      room = 21 - n;
+      if (room < 1)
+	room = 1;
+      (void) sprintf(buf, "%-.*s %s", room, score->died_from, tag);
+    }
+}
+
 void display_scores(show_player)
 int show_player;
 {
@@ -234,15 +272,19 @@ int show_player;
 	    {
 	      /* A misaligned record can carry a race or class past the
 		 tables. Skip it instead of walking off them. */
-	      if (score.race < MAX_RACES && score.class < MAX_CLASS)
+	      if (score.race < MAX_RACES && score_cls(&score) < MAX_CLASS)
 		{
+		  char how[28];
+
 		  score.name[PLAYER_NAME_SIZE - 1] = '\0';
 		  score.died_from[24] = '\0';
+		  score_killed(how, &score);
 		  (void) sprintf(string,
 			   "%-4d%8ld %-19.19s %c %-10.10s %-7.7s%3d %-22.22s",
 			     rank, score.points, score.name, score.sex,
-			     race[score.race].trace, class[score.class].title,
-			     score.lev, score.died_from);
+			     race[score.race].trace,
+			     class[score_cls(&score)].title,
+			     score.lev, how);
 		  prt(string, ++i, 0);
 		}
 	    }
@@ -307,7 +349,8 @@ int duplicate_character ()
   while (!feof(highscore_fp))
     {
       if (score.uid == player_uid && score.birth_date == birth_date
-	  && score.class == py.misc.pclass && score.race == py.misc.prace
+	  && score_cls(&score) == (int)py.misc.pclass
+	  && score.race == py.misc.prace
 	  && score.sex == (py.misc.male ? 'M' : 'F')
 	  && strcmp (score.died_from, "(saved)"))
 	return TRUE;
@@ -385,6 +428,10 @@ static void print_tomb()
   put_buffer ("*|   *     *     *    *   *     *  | *", 18, 8);
   put_buffer ("________)/\\\\_)_/___(\\/___(//_\\)/_\\//__\\\\(/_|_)_______",
 	      19, 0);
+  put_buffer("Press any key for the character history.", 21, 1);
+  (void) inkey();
+  history_show(TRUE);
+  clear_screen();
 
  retry:
   flush();
@@ -483,7 +530,7 @@ static void highscores()
   new_entry.max_dlv = py.misc.max_dlv;
   new_entry.sex = (py.misc.male ? 'M' : 'F');
   new_entry.race = py.misc.prace;
-  new_entry.class = py.misc.pclass;
+  new_entry.class = (int8u)(py.misc.pclass | (challenge_flags() << 4));
   (void) strcpy(new_entry.name, py.misc.name);
   tmp = died_from;
   if ('a' == *tmp)
@@ -564,7 +611,7 @@ static void highscores()
 		    && new_entry.birth_date == old_entry.birth_date))
 	       && new_entry.sex == old_entry.sex
 	       && new_entry.race == old_entry.race
-	       && new_entry.class == old_entry.class)
+	       && score_cls(&new_entry) == score_cls(&old_entry))
 	{
 	  return;
 	}
@@ -600,7 +647,7 @@ static void highscores()
 		    && new_entry.birth_date == old_entry.birth_date))
 	      && new_entry.sex == old_entry.sex
 	      && new_entry.race == old_entry.race
-	      && new_entry.class == old_entry.class)
+	      && score_cls(&new_entry) == score_cls(&old_entry))
 	    break;
 	  entry = old_entry;
 	  /* must fseek() before can change read/write mode */

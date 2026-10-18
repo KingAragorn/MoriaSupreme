@@ -349,6 +349,7 @@ int pickup;
 	      /* Attempt to pick up an object.	       */
 	      if (pickup)
 		{
+		  note_first_ego(i_ptr);
 		  locn = inven_carry(i_ptr);
 		  objdes(tmp_str, &inventory[locn], TRUE);
 		  (void) sprintf(out_val, "You have %s (%c)",tmp_str,locn+'a');
@@ -588,6 +589,12 @@ int monptr, dam;
   if (m_ptr->hp < 0)
     {
       town_note_kill((int)m_ptr->mptr);
+      if (c_list[m_ptr->mptr].cmove & CM_WIN)
+	{
+	  vtype slain;
+	  (void) sprintf(slain, "Slew the %s.", c_list[m_ptr->mptr].name);
+	  history_add(slain);
+	}
       i = monster_death((int)m_ptr->fy, (int)m_ptr->fx,
 			c_list[m_ptr->mptr].cmove);
       if ((py.flags.blind < 1 && m_ptr->ml)

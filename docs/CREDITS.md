@@ -20,6 +20,8 @@ The town hall, hidden door, bank, trade bars, bard instruments, temple patrons, 
 
 The temperament, wanted notices, item feelings, bank locker, armor reading, junk mark, spectre's charge, stair question, and travel loaf were written from public descriptions of Hengband, listed in `docs/HENGBAND_IDEAS.md`. No Hengband source was opened. No personality modifiers, spell lists, monster names, or item text were copied. The numbers and the wording are original to this game.
 
+The character history, randomized ego items, ironman stairs, no selling, and connected stairs were written from public descriptions of the Angband family. No Angband source was opened. Classic Moria has no named-artifact list, so none was added: the birth option only reshuffles the ego items this game already has, (HA), (DF), of Slay X, and the rest. No artifact table, unique-monster list, or item text was copied. The history sentences and the bonus shifts are original to this game.
+
 The project will never be sold.
 
 The DOS, Atari ST, Amiga, Mac Classic, VMS, and IBM PC sources are no longer in this tree. The people who wrote those ports are still named in `files/version.hlp` and in James Wilson's `readme`.

@@ -983,6 +983,11 @@ int store_num, *cur_top;
   char mask[INVEN_WIELD];
   int counter, first_item, last_item;
 
+  if (birth_no_sell)
+    {
+      msg_print("This shop does not buy. Gold is found, not traded.");
+      return FALSE;
+    }
   sell = FALSE;
   first_item = inven_ctr;
   last_item = -1;

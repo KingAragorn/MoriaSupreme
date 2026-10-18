@@ -366,6 +366,16 @@ typedef struct store_type
   inven_record store_inven[STORE_INVEN_MAX];
 } store_type;
 
+/* One line of the character history. The text is original to this game. */
+#define HISTORY_NOTE 72
+#define HISTORY_MAX 48
+typedef struct history_record
+{
+  int32 turn;
+  int16 depth;
+  char note[HISTORY_NOTE];
+} history_record;
+
 /* 64 bytes for this structure */
 typedef struct high_scores
 {
