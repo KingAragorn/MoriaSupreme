@@ -199,17 +199,34 @@ static void force_hoard()
     (void) place_monster(y, x, which, TRUE);
 }
 
+/* A new character carries a weapon but has not wielded it yet. */
 static void brand_weapon()
 {
+  int i;
+  inven_type obj;
   inven_type *w;
 
   w = &inventory[INVEN_WIELD];
+  if (w->tval < TV_HAFTED || w->tval > TV_SWORD)
+    {
+      for (i = 0; i < inven_ctr; i++)
+	if (inventory[i].tval >= TV_HAFTED && inventory[i].tval <= TV_SWORD)
+	  {
+	    obj = inventory[i];
+	    obj.number = 1;
+	    inven_destroy(i);
+	    *w = obj;
+	    equip_ctr++;
+	    break;
+	  }
+    }
   if (w->tval < TV_HAFTED || w->tval > TV_SWORD)
     return;
   w->name2 = SN_ORC_WARNING;
   w->tohit += 2;
   w->todam += 2;
   known2(w);
+  py_bonuses(w, 1);
   calc_bonuses();
 }
 

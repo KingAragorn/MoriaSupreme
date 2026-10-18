@@ -115,8 +115,8 @@ def play_riddle(binary, home, shots):
         ok, why = birth_halfling(game, shots)
         if not ok:
             return False, why
-        # One rest. The riddler is already beside the character.
-        game.send("5")
+        # One rest. Rogue-like keys: '.' stays a turn. The riddler is beside us.
+        game.send(".")
         end = time.time() + 8
         answer = None
         while time.time() < end and answer is None:
@@ -131,11 +131,8 @@ def play_riddle(binary, home, shots):
         if "-more-" in game.text():
             game.send(" ")
             game.pump(0.3)
-        if not game.wait_for("Answer?", timeout=4):
-            # The prompt may already be up, or the riddle line is still showing.
-            if "Answer?" not in game.text():
-                game.send(" ")
-                game.pump(0.3)
+        if "Answer?" not in game.text():
+            game.wait_for("Answer?", timeout=4)
         game.send(answer + "\r")
         if not game.wait_for("invisibility", timeout=6):
             return False, "ring was not given\n" + game.text()
@@ -155,8 +152,18 @@ def play_glow(binary, home, shots):
         ok, why = birth_halfling(game)
         if not ok:
             return False, why
-        game.send("5")
-        if not game.wait_for("cold blue light", timeout=6):
+        game.send(".")
+        end = time.time() + 8
+        seen = False
+        while time.time() < end:
+            game.pump(0.15)
+            text = game.text()
+            if "cold blue light" in text:
+                seen = True
+                break
+            if "-more-" in text:
+                game.send(" ")
+        if not seen:
             return False, "blade did not glow\n" + game.text()
         shots["glow"] = clone_screen(game.screen)
         return True, "blade glowed"
@@ -170,7 +177,7 @@ def play_troll(binary, home, shots):
         ok, why = birth_halfling(game)
         if not ok:
             return False, why
-        game.send("5")
+        game.send(".")
         end = time.time() + 8
         seen = False
         while time.time() < end:
@@ -240,11 +247,14 @@ def load_save(binary, home, shots):
             text = game.text()
             if "different version" in text or "Sorry" in text:
                 return False, text
+            if "change character name" in text or "hange character" in text:
+                game.send(" ")
+                continue
             if "@" in text or "Press any key" in text or "-more-" in text:
                 if "-more-" in text or "Press any key" in text:
                     game.send(" ")
                     continue
-                if "@" in text:
+                if "@" in text and "Town level" in text:
                     shots["loaded"] = clone_screen(game.screen)
                     return True, "patch 2 save loaded"
         return False, "load did not reach the map\n" + game.text()
