@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Birth challenges, the history log, a patch 2 save, and the score line.
+"""Birth challenges, the history log, an older save, and the score line.
 
 Drives build/moriasupreme. Each challenge is checked on the character sheet.
 No selling is also refused in a shop. The history command is checked before
@@ -53,30 +53,17 @@ def load_sheet(session):
     return None
 
 
-def test_patch2(home):
+def test_old_save(home):
     fresh(home)
     shutil.copy(PATCH2, os.path.join(home, "moriasupreme.save"))
     session = Town(BINARY, home, new_game=False)
     try:
-        err = load_sheet(session)
-        if err:
-            return err
-        text = session.text()
-        if "Patchtwo" not in text:
-            return "patch 2 name missing\n" + text
-        if "Ordinary" not in text:
-            return "patch 2 temperament missing\n" + text
-        if "none" not in text:
-            return "patch 2 challenges should be off\n" + text
-        shot(session, "patch2-load")
+        if not session.wait_for("Press any key to continue", 12):
+            return "news missing\n" + session.text()
         session.send(" ")
-        if not session.wait_for("@", 8):
-            return "patch 2 map missing\n" + session.text()
-        session.send("A")
-        session.pump(0.4)
-        if "No history has been written yet." not in session.text():
-            return "patch 2 history was not empty\n" + session.text()
-        shot(session, "patch2-history")
+        if not session.wait_for("will not load it", 8):
+            return "older save was not refused\n" + session.text()
+        shot(session, "old-save-refused")
     finally:
         session.close()
     return None
@@ -201,7 +188,7 @@ def main():
         return 1
     home = "/tmp/moria-challenges"
     tests = (
-        ("patch2", test_patch2),
+        ("old-save", test_old_save),
         ("nosell", test_nosell),
         ("history", test_history_and_score),
         ("reload", test_reload),

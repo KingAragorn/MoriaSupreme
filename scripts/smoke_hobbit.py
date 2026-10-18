@@ -238,14 +238,14 @@ def save_with(binary, home):
         game.close()
 
 
-def load_save(binary, home, shots):
-    game = Game(binary, home, new_game=False)
+def load_save(binary, home, shots, extra_env=None):
+    game = Game(binary, home, new_game=False, extra_env=extra_env)
     try:
         end = time.time() + 12
         while time.time() < end:
             game.pump(0.15)
             text = game.text()
-            if "different version" in text or "Sorry" in text:
+            if "will not load it" in text or "older game" in text:
                 return False, text
             if "change character name" in text or "hange character" in text:
                 game.send(" ")
@@ -256,8 +256,22 @@ def load_save(binary, home, shots):
                     continue
                 if "@" in text and "Town level" in text:
                     shots["loaded"] = clone_screen(game.screen)
-                    return True, "patch 2 save loaded"
+                    return True, "new save reloaded"
         return False, "load did not reach the map\n" + game.text()
+    finally:
+        game.close()
+
+
+def expect_refused(binary, home, shots):
+    game = Game(binary, home, new_game=False)
+    try:
+        if not game.wait_for("Press any key to continue", timeout=12):
+            return False, "news missing\n" + game.text()
+        game.send(" ")
+        if not game.wait_for("will not load it", timeout=8):
+            return False, "older save was not refused\n" + game.text()
+        shots["refused"] = clone_screen(game.screen)
+        return True, "older save refused"
     finally:
         game.close()
 
@@ -298,20 +312,33 @@ def main():
         lambda: play_hoard(binary, "/tmp/hobbit-hoard", shots),
         "/tmp/hobbit-hoard",
     )
+    def do_reload():
+        home = "/tmp/hobbit-reload"
+        os.makedirs(home, exist_ok=True)
+        leftover = os.path.join(home, "moriasupreme.save")
+        if os.path.exists(leftover):
+            os.remove(leftover)
+        ok, detail = save_with(binary, home)
+        if not ok:
+            return False, detail
+        return load_save(binary, home, shots)
+
+    run("reload", do_reload, "/tmp/hobbit-reload")
+
     if old:
-        home = "/tmp/hobbit-patch2"
+        home = "/tmp/hobbit-oldsave"
         os.makedirs(home, exist_ok=True)
         leftover = os.path.join(home, "moriasupreme.save")
         if os.path.exists(leftover):
             os.remove(leftover)
 
-        def do_load():
+        def do_refuse():
             ok, detail = save_with(old, home)
             if not ok:
-                return False, "patch 2 binary: " + detail
-            return load_save(binary, home, shots)
+                return False, "older binary: " + detail
+            return expect_refused(binary, home, shots)
 
-        run("patch2-load", do_load, home)
+        run("old-save", do_refuse, home)
 
     if shot_dir:
         for name, screen in shots.items():
