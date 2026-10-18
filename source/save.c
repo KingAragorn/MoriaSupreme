@@ -64,12 +64,8 @@ static void rd_string(char *);
 static void rd_shorts(int16u *, int);
 static void rd_item(inven_type *);
 static void rd_monster(monster_type *);
-static void wr_town_life(void);
-static void rd_town_life(void);
-static void wr_patch2(void);
-static int rd_patch2(void);
-static void wr_patch3(void);
-static int rd_patch3(void);
+static void wr_game_state(void);
+static int rd_game_state(void);
 #else
 static int sv_write();
 static void wr_byte();
@@ -88,12 +84,8 @@ static void rd_string();
 static void rd_shorts();
 static void rd_item();
 static void rd_monster();
-static void wr_town_life();
-static void rd_town_life();
-static void wr_patch2();
-static int rd_patch2();
-static void wr_patch3();
-static int rd_patch3();
+static void wr_game_state();
+static int rd_game_state();
 #endif
 
 #ifndef MORIA_POSIX
@@ -336,11 +328,8 @@ static int sv_write()
   /* starting with 5.2.2, put the birth_date in the savefile */
   wr_long ((int32u) birth_date);
 
-  /* Patch 1, then patch 2, then patch 3. Older readers stop at birth_date,
-     so each trailer is appended and never inserted into the prefix. */
-  wr_town_life();
-  wr_patch2();
-  wr_patch3();
+  /* Town, temperament, locker, challenges, history, and the riddle. */
+  wr_game_state();
 
   /* only level specific info follows, this allows characters to be
      resurrected, the dungeon level info is not needed for a resurrection */
@@ -498,8 +487,6 @@ char *fnam;
       xor_byte = 0;
       wr_byte((int8u)CUR_VERSION_MIN);
       xor_byte = 0;
-      wr_byte((int8u)PATCH_LEVEL);
-      xor_byte = 0;
       char_tmp = randint(256) - 1;
       wr_byte(char_tmp);
       /* Note that xor_byte is now equal to char_tmp */
@@ -558,7 +545,7 @@ int *generate;
   register struct flags *f_ptr;
   store_type *st_ptr;
   int8u char_tmp, ychar, xchar, count;
-  int8u version_maj, version_min, patch_level;
+  int8u version_maj, version_min;
 
 
   nosignals();
@@ -612,21 +599,15 @@ int *generate;
       xor_byte = 0;
       rd_byte(&version_min);
       xor_byte = 0;
-      rd_byte(&patch_level);
-      xor_byte = 0;
       rd_byte(&xor_byte);
 
-      /* COMPAT support savefiles from 5.0.14 to 5.0.17 */
-      /* support savefiles from 5.1.0 to present */
-      if ((version_maj != CUR_VERSION_MAJ)
-	  || (version_min == 0 && patch_level < 14))
+      if (version_maj != CUR_VERSION_MAJ || version_min != CUR_VERSION_MIN)
 	{
-	  prt("Sorry. This savefile is from a different version of umoria.",
+	  prt("This save is from an older game. Moria Supreme 1.0 will not load it.",
 	      2, 0);
 	  goto error;
 	}
 
-      /* A patch 0 save has no trailer. Clear it before the old bytes load. */
       town_clear();
 
       rd_short(&int16u_tmp);
@@ -646,9 +627,6 @@ int *generate;
 	  rd_short(&int16u_tmp);
 	}
 
-      /* for save files before 5.2.2, read and ignore log_index (sic) */
-      if ((version_min < 2) || (version_min == 2 && patch_level < 2))
-	rd_short(&int16u_tmp);
       rd_long(&l);
 
       if (l & 0x1)
@@ -687,19 +665,11 @@ int *generate;
 	find_ignore_doors = TRUE;
       else
 	find_ignore_doors = FALSE;
-      /* save files before 5.2.2 don't have sound_beep_flag, set it on
-	 for compatibility */
-      if ((version_min < 2) || (version_min == 2 && patch_level < 2))
-	sound_beep_flag = TRUE;
-      else if (l & 0x200)
+      if (l & 0x200)
 	sound_beep_flag = TRUE;
       else
 	sound_beep_flag = FALSE;
-      /* save files before 5.2.2 don't have display_counts, set it on
-	 for compatibility */
-      if ((version_min < 2) || (version_min == 2 && patch_level < 2))
-	display_counts = TRUE;
-      else if (l & 0x400)
+      if (l & 0x400)
 	display_counts = TRUE;
       else
 	display_counts = FALSE;
@@ -836,9 +806,7 @@ int *generate;
 	  rd_short((int16u *)&noscore);
 	  rd_shorts(player_hp, MAX_PLAYER_LEVEL);
 
-	  if ((version_min >= 2)
-	      || (version_min == 1 && patch_level >= 3))
-	    for (i = 0; i < MAX_STORES; i++)
+	  for (i = 0; i < MAX_STORES; i++)
 	      {
 		st_ptr = &store[i];
 		rd_long((int32u *)&st_ptr->store_open);
@@ -856,40 +824,15 @@ int *generate;
 		  }
 	      }
 
-	  if ((version_min >= 2)
-	      || (version_min == 1 && patch_level >= 3))
-	    rd_long(&time_saved);
+	  rd_long(&time_saved);
 
-	  if (version_min >= 2)
-	    rd_string(died_from);
+	  rd_string(died_from);
 
-	  if ((version_min >= 3)
-	      || (version_min == 2 && patch_level >= 2))
-	    rd_long ((int32u *)&max_score);
-	  else
-	    max_score = 0;
+	  rd_long ((int32u *)&max_score);
 
-	  if ((version_min >= 3)
-	      || (version_min == 2 && patch_level >= 2))
-	    rd_long ((int32u *)&birth_date);
-	  else
-	    birth_date = time((long *)0);
-	}
-      /* Only Moria Supreme 0.9 patch 1 (and later) stores the trailer.
-	 Umoria saves and patch 0 saves end at birth_date. */
-      if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
-	  && patch_level >= 1)
-	rd_town_life();
-      if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
-	  && patch_level >= 2)
-	{
-	  if (!rd_patch2())
-	    goto error;
-	}
-      if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
-	  && patch_level >= 3)
-	{
-	  if (!rd_patch3())
+	  rd_long ((int32u *)&birth_date);
+
+	  if (!rd_game_state())
 	    goto error;
 	}
       if ((c = getc(fileptr)) == EOF || (l & 0x80000000L))
@@ -1004,32 +947,6 @@ int *generate;
 
       *generate = FALSE;  /* We have restored a cave - no need to generate. */
 
-      if ((version_min == 1 && patch_level < 3)
-	  || (version_min == 0))
-	for (i = 0; i < MAX_STORES; i++)
-	  {
-	    st_ptr = &store[i];
-	    rd_long((int32u *)&st_ptr->store_open);
-	    rd_short((int16u *)&st_ptr->insult_cur);
-	    rd_byte(&st_ptr->owner);
-	    rd_byte(&st_ptr->store_ctr);
-	    rd_short(&st_ptr->good_buy);
-	    rd_short(&st_ptr->bad_buy);
-	    if (st_ptr->store_ctr > STORE_INVEN_MAX)
-	      goto error;
-	    for (j = 0; j < st_ptr->store_ctr; j++)
-	      {
-		rd_long((int32u *)&st_ptr->store_inven[j].scost);
-		rd_item(&st_ptr->store_inven[j].sitem);
-	      }
-	  }
-
-      /* read the time that the file was saved */
-      if (version_min == 0 && patch_level < 16)
-	time_saved = 0; /* no time in file, clear to zero */
-      else if (version_min == 1 && patch_level < 3)
-	rd_long(&time_saved);
-
       if (ferror(fileptr))
 	goto error;
 
@@ -1103,18 +1020,6 @@ int *generate;
 	  if (noscore)
 	    msg_print("This save file cannot be used to get on the score board.");
 
-	  if (version_maj != CUR_VERSION_MAJ
-	      || version_min != CUR_VERSION_MIN)
-	    {
-	      (void) sprintf(temp,
-			     "Save file version %d.%d %s on game version %d.%d.",
-			     version_maj, version_min,
-			     version_min <= CUR_VERSION_MIN
-			     ? "accepted" : "risky" ,
-			     CUR_VERSION_MAJ, CUR_VERSION_MIN);
-	      msg_print(temp);
-	    }
-
 	  if (turn >= 0)
 	    return TRUE;
 	  else
@@ -1148,9 +1053,9 @@ int16u s;
   DEBUG(fprintf (logfile, " %02X = %d\n", (int) xor_byte, (int) s));
 }
 
-/* Patron, bank balance, druid grove mask, and two notice-board jobs.
-   Fixed layout, written with the same xor stream as the rest of the file. */
-static void wr_town_life()
+/* Town, temperament, locker, challenges, history, and the riddle.
+   Always present. An older file is refused before this is read. */
+static void wr_game_state()
 {
   int i;
 
@@ -1166,13 +1071,30 @@ static void wr_town_life()
       wr_byte(town_quests[i].have);
       wr_byte(town_quests[i].done);
     }
+  wr_byte(personality);
+  wr_byte(locker_ctr);
+  for (i = 0; i < (int)locker_ctr; i++)
+    wr_item(&locker[i]);
+  wr_byte((int8u)challenge_flags());
+  wr_long((int32u)ego_seed);
+  wr_byte(history_ego);
+  wr_short((int16u)history_ctr);
+  for (i = 0; i < (int)history_ctr; i++)
+    {
+      wr_long((int32u)history_log[i].turn);
+      wr_short((int16u)history_log[i].depth);
+      wr_string(history_log[i].note);
+    }
+  wr_byte(riddler_state);
 }
 
-static void rd_town_life()
+static int rd_game_state()
 {
-  int i;
+  int i, k;
+  int8u flags, n, b;
+  int16u count, s;
   int32u l;
-  int16u s;
+  bigvtype note;
 
   rd_byte(&town_patron);
   rd_long(&l);
@@ -1192,25 +1114,6 @@ static void rd_town_life()
     town_patron = PATRON_NONE;
   if (bank_gold < 0)
     bank_gold = 0;
-}
-
-/* Temperament, then a locker count and that many item records.
-   A missing trailer is Ordinary and an empty locker, which town_clear
-   already set. */
-static void wr_patch2()
-{
-  int i;
-
-  wr_byte(personality);
-  wr_byte(locker_ctr);
-  for (i = 0; i < (int)locker_ctr; i++)
-    wr_item(&locker[i]);
-}
-
-static int rd_patch2()
-{
-  int i;
-  int8u n;
 
   rd_byte(&personality);
   if (personality >= MAX_PERSONALITY)
@@ -1225,34 +1128,6 @@ static int rd_patch2()
       if (locker[i].index >= MAX_OBJECTS || locker[i].tval == TV_NOTHING)
 	return FALSE;
     }
-  return TRUE;
-}
-
-/* Challenge flags, the ego seed, and the history log. A missing trailer
-   leaves the flags off and the log empty, which town_clear already did. */
-static void wr_patch3()
-{
-  int i;
-
-  wr_byte((int8u)challenge_flags());
-  wr_long((int32u)ego_seed);
-  wr_byte(history_ego);
-  wr_short((int16u)history_ctr);
-  for (i = 0; i < (int)history_ctr; i++)
-    {
-      wr_long((int32u)history_log[i].turn);
-      wr_short((int16u)history_log[i].depth);
-      wr_string(history_log[i].note);
-    }
-}
-
-static int rd_patch3()
-{
-  int i;
-  int8u flags;
-  int16u n;
-  int32u l;
-  bigvtype note;
 
   rd_byte(&flags);
   birth_rand_ego = (flags & CHAL_EGO) ? 1 : 0;
@@ -1264,26 +1139,23 @@ static int rd_patch3()
   rd_byte(&history_ego);
   if (history_ego > 1)
     history_ego = 1;
-  rd_short(&n);
-  if (n > HISTORY_MAX)
+  rd_short(&count);
+  if (count > HISTORY_MAX)
     return FALSE;
-  history_ctr = (int16)n;
-  for (i = 0; i < (int)n; i++)
+  history_ctr = (int16)count;
+  for (i = 0; i < (int)count; i++)
     {
       rd_long(&l);
       history_log[i].turn = (int32)l;
       rd_short((int16u *)&history_log[i].depth);
       rd_string(note);
       note[HISTORY_NOTE - 1] = '\0';
-      {
-	int k;
-	for (k = 0; k < HISTORY_NOTE; k++)
-	  {
-	    history_log[i].note[k] = note[k];
-	    if (note[k] == '\0')
-	      break;
-	  }
-      }
+      for (k = 0; k < HISTORY_NOTE; k++)
+	{
+	  history_log[i].note[k] = note[k];
+	  if (note[k] == '\0')
+	    break;
+	}
     }
   if (birth_rand_ego)
     {
@@ -1291,6 +1163,11 @@ static int rd_patch3()
 	ego_seed = 1;
       ego_prepare();
     }
+
+  rd_byte(&b);
+  if (b > 3)
+    b = 0;
+  riddler_state = b;
   return TRUE;
 }
 

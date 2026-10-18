@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Headless Chrome: birth challenges on the sheet, and a patch 2 save."""
+"""Headless Chrome: birth challenges, then save and reload that character."""
 
 import os
 import sys
@@ -39,54 +39,8 @@ def push(page, text):
         page.wait_for_timeout(90)
 
 
-def install_save_route(page):
-    """Serve index.html with a hook that drops a patch 2 save in before main.
-
-    The hook runs only when the URL asks for it, so a normal visit is the
-    page as shipped.
-    """
-    html_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "web", "dist", "index.html"
-    )
-
-    def handle(route):
-        url = route.request.url.split("?")[0]
-        if not (url.endswith("/") or url.endswith("index.html")):
-            route.continue_()
-            return
-        html = open(os.path.abspath(html_path), encoding="utf-8").read()
-        needle = "Module.callMain([]);"
-        insert = """
-          if (location.search.indexOf("patch2=1") >= 0) {
-            try {
-              var xhr = new XMLHttpRequest();
-              xhr.open("GET", "patch2.save", false);
-              xhr.overrideMimeType("text/plain; charset=x-user-defined");
-              xhr.send(null);
-              var raw = xhr.responseText || "";
-              var bytes = new Uint8Array(raw.length);
-              for (var bi = 0; bi < raw.length; bi++)
-                bytes[bi] = raw.charCodeAt(bi) & 0xff;
-              FS.writeFile("/home/web_user/moriasupreme.save", bytes);
-            } catch (e) { console.error(e); }
-          }
-          Module.callMain([]);
-        """
-        if needle not in html:
-            route.fulfill(status=500, body="callMain hook missing")
-            return
-        route.fulfill(
-            status=200,
-            content_type="text/html",
-            body=html.replace(needle, insert, 1),
-        )
-
-    page.route("**/*", handle)
-
-
 def open_page(browser, url):
     page = browser.new_page(viewport={"width": 1100, "height": 820})
-    install_save_route(page)
     page.goto(url, wait_until="domcontentloaded")
     page.click("#screen")
     if not wait_text(page, "Press any key", 40):
@@ -141,19 +95,37 @@ def main():
             if word not in text:
                 raise SystemExit("web sheet missing %s\n%s" % (word, text))
         page.screenshot(path=os.path.join(SHOTS, "web-challenges.png"))
-        page.close()
-
-        page = open_page(browser, BASE + "?patch2=1")
         push(page, " ")
-        text = wait_text(page, "Patchtwo", 20)
+        if not wait_text(page, "Town level", 15):
+            raise SystemExit("web town missing\n" + screen(page))
+        push(page, "\x18")
+        end = time.time() + 20
+        while time.time() < end:
+            text = screen(page)
+            if "Delete old savefile" in text or "File exists" in text:
+                push(page, "y")
+            elif "-more-" in text or "Press any key" in text:
+                push(page, " ")
+            exited = page.evaluate("window.moriaExited")
+            if exited is not None:
+                break
+            page.wait_for_timeout(200)
+        else:
+            raise SystemExit("web save did not finish\n" + screen(page))
+        # A new page drops the browser save. Reloading this page keeps it.
+        page.goto(BASE, wait_until="domcontentloaded")
+        page.click("#screen")
+        if not wait_text(page, "Press any key", 40):
+            raise SystemExit("reload news missing\n" + screen(page))
+        push(page, " ")
+        text = wait_text(page, "Webfour", 25)
         if not text:
-            raise SystemExit("patch 2 name missing\n" + screen(page))
-        text = screen(page)
-        if "none" not in text:
-            raise SystemExit("patch 2 web challenges not off\n" + text)
-        if "Ordinary" not in text:
-            raise SystemExit("patch 2 web temperament missing\n" + text)
-        page.screenshot(path=os.path.join(SHOTS, "web-patch2.png"))
+            raise SystemExit("reloaded name missing\n" + screen(page))
+        for word in ("ironman stairs", "no selling", "connected stairs",
+                     "randomized egos"):
+            if word not in text:
+                raise SystemExit("reload missing %s\n%s" % (word, text))
+        page.screenshot(path=os.path.join(SHOTS, "web-reload.png"))
         page.close()
         browser.close()
     print("web challenges ok")

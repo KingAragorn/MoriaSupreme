@@ -22,7 +22,7 @@ Effort is the size of the change, not a schedule.
 - **Medium.** A new choice at birth, or a new counter in the town, plus a short field on the save.
 - **Large.** The equipment layout or a follower that has to survive saves. Easy to get wrong.
 
-Saves are version 0.9. Patch 0 has no town trailer and still loads. Patch 1 appends the patron, the bank balance, the druid's second spell list, and two notice-board jobs. Patch 2, now written by this binary, appends a temperament byte and a bank locker after that. A patch 0 or patch 1 save loads as Ordinary with an empty locker. Race and class numbers do not move.
+Saves are version 1.0. The temperament, the locker, the town fields, the history, and the riddle are part of that file. An older save is refused. Race and class numbers do not move inside a 1.0 file.
 
 ## Worth doing
 

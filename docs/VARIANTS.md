@@ -160,17 +160,35 @@ Public descriptions only. No Angband source, no artifact file, and no unique-mon
 | Idea | Status | How it landed |
 | --- | --- | --- |
 | Character history | included | Automatic notes for a level gain, the first ego item picked up, a winning creature (Moria's Balrog, the `CM_WIN` monster), a new deepest floor, a temple dedication, and a finished notice-board job. `A` reads the log in either keyset. The death screen shows it, and the character record written at the tomb includes it. The log holds 48 lines and drops the oldest. |
-| Randomized ego items | included | A birth question, off unless answered yes. A seed in the save reshuffles which ego the weapon and armor dice pick, where several results already share a die, and moves to-hit, to-damage, to-armor, and the p1 bonus by at most one. Names and flag sets stay Moria's. A bonus does not change sign. The dungeon RNG is untouched, so a character who leaves the option off generates the same items as before. |
+| Randomized ego items | included | A birth question, off unless answered yes. A seed in the save reshuffles which ego the weapon and armor dice pick, where several results already share a die, and moves to-hit, to-damage, to-armor, and the p1 bonus by at most one. Names and flag sets stay Moria's. A bonus does not change sign. The dungeon RNG is untouched, so a character who leaves the option off generates the same items as before. The orc-warning blade is one of those results. |
 | Ironman stairs | included | Birth question, off by default. Up stairs are not placed, and standing where one would have been does nothing useful. Word of Recall still counts down in the dungeon but does not return to town. Recall from town still goes down. Resurrection still returns to town. |
 | No selling | included | Birth question, off by default. A shop refuses a sale. Gold piles on the floor, including a monster's, are worth twice as much. Shop prices and quest rewards are unchanged. |
 | Connected stairs | included | Birth question, off by default. The stair you take tries to come out at the same tile on the next level, and you stand on it. If that tile is not open floor, placement stays random. Ironman still does not place the up stair back. |
 
-Active challenges are on the character sheet and in the character record. A score line keeps the 73-byte record. The four flags ride in the high half of the class byte and, when any are on, show as letters after the cause of death: I ironman, N no selling, C connected stairs, E randomized egos. An older score has those bits clear, so it still prints the same way.
+Active challenges are on the character sheet and in the character record. A score line keeps the same record size. The four flags ride in the high half of the class byte and, when any are on, show as letters after the cause of death: I ironman, N no selling, C connected stairs, E randomized egos.
+
+## Notes from a hobbit tale
+
+Public memory of that story, not the text. No sentence from the book is in the game. No named artifacts. The town is still the one town, and the win is still the Balrog.
+
+| Piece | Where it sits |
+| --- | --- |
+| Goblin, Goblin Captain | A small pack on shallow levels. They count as orc-kin. |
+| Warg | A faster wolf, a little deeper than the goblins. The ordinary Wolf is still in the list. |
+| Giant Wood Spider | Poison sting, around the early middle. |
+| Stone Troll | Slow and heavy. In daylight on the surface, or in the square of a lamp, it stiffens and its hide cracks. Douse the light and it fights. A lit room by itself does not do this. |
+| Pale Riddler | Once, in the middle depths. It asks one original riddle. A right answer hands over a ring and it leaves. A wrong answer and it fights. It does not come back. |
+| Ring of Invisibility | Appended after the old object list. It is a stealth ring in the existing ring style, not a new invisible-player system. |
+| Halfling | A small burglar's touch on the race line: disarm 17, search 13, stealth 5, perception -5. Hit die and experience are unchanged. |
+| of Orc-warning | A weapon ego. The blade glows blue when orc-kin are in sight, and the blow is a little harder against them. Orcs and hobgoblins already in the list are orc-kin. |
+| Dragon hoard | From level 30, a dragon sometimes sits with extra piles of gold around it. |
+
+Creature indexes were not inserted. The new six follow the Balrog, after two empty slots the old allocator already counted. The usual monster mix is the same. The new ones are placed on their own, by depth.
 
 ## Save files
 
-The on-disk character is still version 0.9. `prace` and `pclass` are bytes. New races are indexes 10 (Gnome) and 11 (Dryad). New classes are 13 (Druid), 14 (Bard), and 15 (Adventurer). Indexes 0 through 9 and 0 through 12 are the Pmoria ids, including Monk at 12. A save from PmoriaPlus still loads and still shows the same race and class.
+The on-disk character is version 1.0. `prace` and `pclass` are bytes. New races are indexes 10 (Gnome) and 11 (Dryad). New classes are 13 (Druid), 14 (Bard), and 15 (Adventurer). Indexes 0 through 9 and 0 through 12 are the Pmoria ids, including Monk at 12.
 
-Patch level is 3. The bytes through `birth_date` are the patch 0 layout. After that, a patch 1 save adds a fixed trailer: patron, bank balance, the druid's second spell mask, and two notice-board jobs. Patch 2 appends a temperament byte, a locker count, and that many item records. Patch 3 appends one flag byte (randomized ego items, ironman stairs, no selling, connected stairs), the ego seed, a flag that the first ego item was already noted, a history count, and that many notes (turn, depth, text). A patch 0 save has no trailer and loads as Ordinary, with an empty locker, an empty history, and every challenge off. A patch 1 save loads the same way, keeping the jobs it already had. A patch 2 save keeps its temperament and locker. The missing patch 3 trailer loads as an empty history with every challenge off. A patch 3 save will not load in a patch 2 binary. Score files still use the same 73-byte record; an older score file still loads, because only a newer patch than this binary is rejected.
+A save or score file from any other version is refused, with a message that Moria Supreme 1.0 will not load it. That includes Pmoria, Umoria, and earlier Moria Supreme files. There is no patch trailer and no loader for an older layout. After `birth_date` the file always stores the town (patron, bank, grove spells, two jobs), the temperament, the locker, the challenge flags and ego seed, the history log, and one byte for the riddle.
 
-Object indexes were not inserted. The hall, bank, board, hidden door, instruments, trade bars, grove book, and travel loaf are appended after the old object list. The six shops are still the only `store[]` entries, so that part of a save does not grow. The worn-equipment array does not grow. The default filename for a new game is `moriasupreme.save` in the home directory, so it does not overwrite a `moria.save` from an older binary. Pass the old path on the command line to open it.
+Object indexes were not inserted. The hall, bank, board, hidden door, instruments, trade bars, grove book, travel loaf, and ring of invisibility are appended after the old object list. The six shops are still the only `store[]` entries. The worn-equipment array does not grow. The default filename for a new game is `moriasupreme.save` in the home directory. Scores go to `$HOME/.moriasupreme/scores`, and that file is version 1.0 as well. The challenge letters still ride in the high half of the class byte.

@@ -206,7 +206,8 @@ race_type race[MAX_RACES] = {
     },
    {"Halfling", -3,  2,	 1,  3,	 1,  1,
       21, 12, 36,  3, 60,  3, 33,  3, 50,  3,
-      15, 12, 4, -6,-10, 20,  8,  6,  4, 110, 0xE7CB,  3,
+      /* A small burglar's touch: disarm, search, stealth, perception. */
+      17, 13, 5, -5,-10, 20,  8,  6,  4, 110, 0xE7CB,  3,
       0,  0,  0,  0,  0
     },
    {"Spectre",  -5,  4,  2,  2,  3, -5,

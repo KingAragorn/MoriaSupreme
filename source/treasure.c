@@ -974,7 +974,10 @@ treasure_type object_list[MAX_OBJECTS] = {
     0,	  80,	80,   1,  30,	0,   0,	 0,   0, {1,1}	,  1},
 /* A heavier ration. p1 is the food it restores. subval 97 is its own. */
 {"& travel loaf~"		,0x00000000L, TV_FOOD, ',',	/* 439 */
- 9000,	   8,	97,   1,  20,	0,   0,	 0,   0, {0,0}	,  0}
+ 9000,	   8,	97,   1,  20,	0,   0,	 0,   0, {0,0}	,  0},
+/* Stealth, the way other rings grant a bonus. p1 is the amount. */
+{"Invisibility"			,0x00000100L, TV_RING, '=',	/* 440 */
+    5,	6000,	31,   1,   2,	0,   0,	 0,   0, {0,0}	,  0}
 };
 
 char *special_names[SN_ARRAY_SIZE] = {
@@ -997,7 +1000,7 @@ char *special_names[SN_ARRAY_SIZE] = {
 	"of Dragon Slaying",	"(Empty)",		"(Locked)",
 	"(Poison Needle)",	"(Gas Trap)",		"(Explosion Device)",
 	"(Summoning Runes)",	"(Multiple Traps)",	"(Disarmed)",
-	"(Unlocked)",		"of Slay Animal"
+	"(Unlocked)",		"of Slay Animal",	"of Orc-warning"
 };
 
 /* Pairing things down for THINK C.  */

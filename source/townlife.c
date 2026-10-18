@@ -131,6 +131,7 @@ void town_clear()
   spell_learned2 = 0;
   spell_worked2 = 0;
   personality = PERS_ORDINARY;
+  riddler_state = 0;
   locker_ctr = 0;
   birth_rand_ego = 0;
   birth_ironman = 0;

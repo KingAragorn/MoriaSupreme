@@ -35,7 +35,7 @@ Clean-room additions:
 
 Which older classes each older race may take is unchanged, except that Humans, Half-Elves, and the races that fit a new profession may also take Druid, Bard, or Adventurer. The full grid is in `docs/VARIANTS.md`.
 
-Save files are still version 0.9. Race and class are stored as indexes, and the new ones are appended, so an old save still names the same race and class. Patch 1 adds a trailer after the old character record (patron, bank balance, the druid's second spell list, and two town jobs). A patch 0 save still loads. New games write `$HOME/moriasupreme.save`. Scores go to `$HOME/.moriasupreme/scores`.
+Save files are version 1.0. An older save, including Pmoria and earlier Moria Supreme, is refused instead of loaded. New games write `$HOME/moriasupreme.save`. Scores go to `$HOME/.moriasupreme/scores`, and an older score file is refused the same way.
 
 ## Town
 

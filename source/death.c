@@ -175,9 +175,23 @@ high_scores *score;
   return (int)(score->class & 0x0F);
 }
 
+/* 0 if the file is empty, 1 if it is this game, -1 if it is older. */
+static int score_version()
+{
+  int maj, min;
+
+  maj = getc(highscore_fp);
+  min = getc(highscore_fp);
+  if (feof(highscore_fp))
+    return 0;
+  if (maj != CUR_VERSION_MAJ || min != CUR_VERSION_MIN)
+    return -1;
+  return 1;
+}
+
 /* Challenge letters sit in the killed-by column: I ironman, N no
    selling, C connected stairs, E randomized ego items. No letters
-   means an older score, or a game with every option off. */
+   means every option is off. */
 static void score_killed(buf, score)
 char *buf;
 high_scores *score;
@@ -214,7 +228,6 @@ int show_player;
   high_scores score;
   char input;
   char string[100];
-  int8u version_maj, version_min, patch_level;
 #if defined(unix) || defined(VMS)
   int16 player_uid;
 #endif
@@ -222,21 +235,9 @@ int show_player;
 
   (void) fseek(highscore_fp, (long)0, L_SET);
 
-  /* Read version numbers from the score file, and check for validity.  */
-  version_maj = getc (highscore_fp);
-  version_min = getc (highscore_fp);
-  patch_level = getc (highscore_fp);
-  /* Support score files from 5.2.2 to present.  */
-  if (feof (highscore_fp))
-    /* An empty score file. */
-    ;
-  else if ((version_maj != CUR_VERSION_MAJ)
-	   || (version_min > CUR_VERSION_MIN)
-	   || (version_min == CUR_VERSION_MIN && patch_level > PATCH_LEVEL)
-	   || (version_min == 2 && patch_level < 2)
-	   || (version_min < 2))
+  if (score_version() < 0)
     {
-      msg_print("Sorry. This scorefile is from a different version of  umoria.");
+      msg_print("This score file is from an older game and will not be read.");
       msg_print (CNIL);
       return;
     }
@@ -311,30 +312,19 @@ int duplicate_character ()
 #else /* ! unix && ! VMS */
 
   high_scores score;
-  int8u version_maj, version_min, patch_level;
   int16 player_uid;
 
 
   (void) fseek(highscore_fp, (long)0, L_SET);
 
-  /* Read version numbers from the score file, and check for validity.  */
-  version_maj = getc (highscore_fp);
-  version_min = getc (highscore_fp);
-  patch_level = getc (highscore_fp);
-  /* Support score files from 5.2.2 to present.  */
-  if (feof (highscore_fp))
-    /* An empty score file.  */
-    return FALSE;
-  if ((version_maj != CUR_VERSION_MAJ)
-      || (version_min > CUR_VERSION_MIN)
-      || (version_min == CUR_VERSION_MIN && patch_level > PATCH_LEVEL)
-      || (version_min == 2 && patch_level < 2)
-      || (version_min < 2))
+  if (score_version() < 0)
     {
-      msg_print("Sorry. This scorefile is from a different version of  umoria.");
+      msg_print("This score file is from an older game and will not be read.");
       msg_print (CNIL);
       return FALSE;
     }
+  if (feof(highscore_fp))
+    return FALSE;
 
   /* set the static fileptr in save.c to the highscore file pointer */
   set_fileptr(highscore_fp);
@@ -498,7 +488,7 @@ static void highscores()
   high_scores old_entry, new_entry, entry;
   int i;
   char *tmp;
-  int8u version_maj, version_min, patch_level;
+  int score_ver;
   long curpos;
 
   clear_screen();
@@ -561,35 +551,20 @@ static void highscores()
   /* Seek to the beginning of the file just to be safe. */
   (void) fseek(highscore_fp, (long)0, L_SET);
 
-  /* Read version numbers from the score file, and check for validity.  */
-  version_maj = getc (highscore_fp);
-  version_min = getc (highscore_fp);
-  patch_level = getc (highscore_fp);
-  /* If this is a new scorefile, it should be empty.  Write the current
-     version numbers to the score file.  */
-  if (feof (highscore_fp))
+  /* An empty file gets this game's version. An older file is left alone. */
+  score_ver = score_version();
+  if (score_ver == 0)
     {
-      /* Seek to the beginning of the file just to be safe. */
       (void) fseek(highscore_fp, (long)0, L_SET);
 
       (void) putc (CUR_VERSION_MAJ, highscore_fp);
       (void) putc (CUR_VERSION_MIN, highscore_fp);
-      (void) putc (PATCH_LEVEL, highscore_fp);
 
       /* must fseek() before can change read/write mode */
       (void) fseek(highscore_fp, (long)0, L_INCR);
     }
-  /* Support score files from 5.2.2 to present.  */
-  else if ((version_maj != CUR_VERSION_MAJ)
-	   || (version_min > CUR_VERSION_MIN)
-	   || (version_min == CUR_VERSION_MIN && patch_level > PATCH_LEVEL)
-	   || (version_min == 2 && patch_level < 2)
-	   || (version_min < 2))
-    {
-      /* No need to print a message, a subsequent call to display_scores()
-	 will print a message.  */
-      return;
-    }
+  else if (score_ver < 0)
+    return;
 
   /* set the static fileptr in save.c to the highscore file pointer */
   set_fileptr(highscore_fp);

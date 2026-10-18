@@ -2263,6 +2263,16 @@ int monster;
 	  r_ptr->r_cdefense |= CD_FIRE;
 	}
     }
+  /* A warning blade bites a little harder on orc-kin. The glow is separate. */
+  if (i_ptr->name2 == SN_ORC_WARNING)
+    {
+      m_ptr = &c_list[monster];
+      if (m_ptr->cdefense & CD_ORC)
+	{
+	  tdam = tdam * 3 / 2;
+	  c_recall[monster].r_cdefense |= CD_ORC;
+	}
+    }
   return(tdam);
 }
 

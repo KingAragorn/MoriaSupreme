@@ -17,7 +17,7 @@
    results a die roll picks (only where several results share the die) and
    moves each ego's combat numbers by at most one. The dungeon RNG is
    still randint(), so an ordinary character generates the same items. */
-static int8u ego_map[17][17];
+static int8u ego_map[19][19];
 static int16 ego_hit[SN_ARRAY_SIZE];
 static int16 ego_dam[SN_ARRAY_SIZE];
 static int16 ego_ac[SN_ARRAY_SIZE];
@@ -38,7 +38,7 @@ void ego_prepare()
   if (!birth_rand_ego || ego_seed == 0)
     return;
   state = (int32u)ego_seed;
-  for (n = 2; n <= 16; n++)
+  for (n = 2; n <= 18; n++)
     {
       for (i = 1; i <= n; i++)
 	ego_map[n][i] = (int8u)i;
@@ -65,7 +65,7 @@ int n;
   int r;
 
   r = randint(n);
-  if (birth_rand_ego && ego_seed != 0 && n >= 2 && n <= 16)
+  if (birth_rand_ego && ego_seed != 0 && n >= 2 && n <= 18)
     return (int)ego_map[n][r];
   return r;
 }
@@ -198,7 +198,7 @@ int x, level;
 	     before change to treasure distribution, this helps keep same
 	     number of ego weapons same as before, see also missiles */
 	  if (magik(3*special/2))
-	    switch(ego_die(16))
+	    switch(ego_die(18))
 	      {
 	      case 1:	/* Holy Avenger	 */
 		t_ptr->flags |= (TR_SEE_INVIS|TR_SUST_STAT|TR_SLAY_UNDEAD|
@@ -280,6 +280,12 @@ int x, level;
                 t_ptr->p1 = (randint(3)+2);
 		t_ptr->name2 = SN_FB;
 		t_ptr->cost += 3000;
+		break;
+	      case 17: case 18:	 /* glows when orc-kin are near */
+		t_ptr->tohit += 2;
+		t_ptr->todam += 2;
+		t_ptr->name2 = SN_ORC_WARNING;
+		t_ptr->cost += 2500;
 		break;
 	      }
 	}

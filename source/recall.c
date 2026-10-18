@@ -320,6 +320,8 @@ int mon_num;
 	roff(" evil");
       if (cp->cdefense & CD_UNDEAD)
 	roff(" undead");
+      if (cp->cdefense & CD_ORC)
+	roff(" orc-kin");
 
       /* calculate the integer exp part, can be larger than 64K when first
 	 level character looks at Balrog info, so must store in long */
@@ -453,6 +455,8 @@ int mon_num;
     }
   if (!k)
     roff(".");
+  if (rcdefense & CD_LIGHTBANE)
+    roff(" It stiffens and cracks in bright light.");
   if (rcdefense & CD_INFRA)
     roff(" It is warm blooded");
   if (rcdefense & CD_NO_SLEEP)
