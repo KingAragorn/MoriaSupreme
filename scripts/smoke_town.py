@@ -89,6 +89,11 @@ TEMPERAMENT_NAMES = {
 
 
 def answer_challenges(session, answers="nnnn"):
+    # Priests and druids are told they can learn a prayer as soon as the
+    # temperament is chosen. That -more- covers the first challenge question.
+    session.pump(0.15)
+    if "-more-" in session.text():
+        session.send(" ")
     prompts = ("Randomized ego", "Ironman stairs", "No selling", "Connected stairs")
     for prompt, ans in zip(prompts, answers):
         if not session.wait_for(prompt):

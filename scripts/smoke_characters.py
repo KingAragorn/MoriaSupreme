@@ -244,6 +244,9 @@ def play_combo(binary, home, race_i, race, class_title, class_key, shots):
         if not session.wait_for("temperament"):
             return False, "temperament prompt missing", session
         session.send("a")
+        session.pump(0.15)
+        if "-more-" in session.text():
+            session.send(" ")
         for prompt in ("Randomized ego", "Ironman stairs", "No selling",
                        "Connected stairs"):
             if not session.wait_for(prompt):
