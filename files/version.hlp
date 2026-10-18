@@ -79,27 +79,33 @@ Races added beside the Pmoria set: Gnome (the Umoria race Pmoria had
 replaced with the Spectre) and Dryad. Classes added: Druid, Bard, and
 Adventurer. Their numbers are original. See docs/VARIANTS.md.
 
-Patch 1 adds the town hall, bank, notice board, hidden guild door,
-four patrons, bard instruments, and a grove book for druids. Saves
-from patch 0 still load. The new fields are stored after the old
-character record.
+The town has a hall, a bank, a notice board, a hidden guild door,
+four patrons, bard instruments, and a grove book for druids.
 
-Patch 2 adds a temperament at birth, a bank locker, wanted notices,
-a feeling for unknown weapons and armor, and an armor reading at the
-hall. A pack item inscribed "junk" can be destroyed with }, and a
-spectre can spend a wand charge with ]. A character under a fifth of
-their hit points is asked before taking stairs. The general store
-can stock a travel loaf. Patch 0 and patch 1 saves still load, as
-Ordinary, with an empty locker.
+Birth asks for a temperament. The bank has a locker. The board can
+post a wanted notice. Unknown weapons and armor have a feeling, and
+the hall can read armor. A pack item inscribed "junk" can be
+destroyed with }, and a spectre can spend a wand charge with ]. A
+character under a fifth of their hit points is asked before taking
+stairs. The general store can stock a travel loaf.
 
-Patch 3 keeps a character history. Level gains, a new deepest floor,
-the first ego item, a winning creature, a temple dedication, and a
-finished notice-board job are written down. A reads the log. It is
-also shown when you die, and in the character record. Birth can turn
-on randomized ego items (the same Moria names, with bonuses moved by
-at most one), ironman stairs, no selling, or connected stairs. Each
-one starts off. Floor gold is doubled when selling is off. Patch 0,
-1, and 2 saves still load, with an empty history and every option off.
+This game is save version 1.0. A character history records level
+gains, a new deepest floor, the first ego item, a winning creature,
+a temple dedication, and a finished notice-board job. A reads the
+log. Birth can turn on randomized ego items (the same Moria names,
+with bonuses moved by at most one), ironman stairs, no selling, or
+connected stairs. Each one starts off. Floor gold is doubled when
+selling is off.
+
+Goblins, wargs, a giant wood spider, and a stone troll live in the
+dungeon. The troll stiffens in daylight or lamplight. A pale riddler
+asks one riddle, once. The prize is a ring of invisibility, which
+adds stealth. A weapon of Orc-warning glows when orc-kin are in
+sight. Deep down, a dragon sometimes sits on extra gold. Halflings
+are a little better at slipping locks and moving quietly.
+
+An older save or score file is refused. Moria Supreme 1.0 will not
+load Pmoria, Umoria, or an earlier Moria Supreme character.
 
 This build runs on Linux, on macOS, and in a web browser. The DOS,
 Atari ST, Amiga, Mac Classic, VMS, and IBM PC sources are not in the

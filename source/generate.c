@@ -1510,4 +1510,5 @@ void generate_cave()
       panel_col = max_panel_cols;
       cave_gen();
     }
+  hobbit_dress_level();
 }

@@ -881,6 +881,8 @@ void dungeon()
       if (teleport_flag)  teleport(100);
       /* Move the creatures	       */
       if (!new_level_flag)  creatures(TRUE);
+      if (!new_level_flag && !death)
+	hobbit_after_turn();
       /* Exit when new_level_flag is set   */
     }
   while (!new_level_flag && !eof_flag);

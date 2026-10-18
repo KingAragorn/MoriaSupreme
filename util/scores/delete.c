@@ -46,7 +46,7 @@ main(argc, argv)
 {
   register int i, rank;
   high_scores score;
-  int8u version_maj, version_min, patch_level;
+  int8u version_maj, version_min;
   int delete_number;
 
   if (argc != 3)
@@ -78,29 +78,21 @@ main(argc, argv)
   (void) fseek(highscore_fp, (off_t)0, L_SET);
 #endif
 
-  /* Read version numbers from the score file, and check for validity.  */
   version_maj = getc (highscore_fp);
   version_min = getc (highscore_fp);
-  patch_level = getc (highscore_fp);
-  /* Support score files from 5.2.2 to present.  */
   if (feof (highscore_fp))
     {
       printf ("The scorefile is empty.\n");
       exit (-1);
     }
-  else if ((version_maj != CUR_VERSION_MAJ)
-      || (version_min > CUR_VERSION_MIN)
-      || (version_min == CUR_VERSION_MIN && patch_level > PATCH_LEVEL)
-      || (version_min == 2 && patch_level < 2)
-      || (version_min < 2))
+  else if (version_maj != CUR_VERSION_MAJ || version_min != CUR_VERSION_MIN)
     {
-      printf("Sorry. This scorefile is from a different version of umoria.\n");
+      printf("This score file is from an older game and will not be read.\n");
       exit (-1);
     }
 
   (void) putc (version_maj, stdout);
   (void) putc (version_min, stdout);
-  (void) putc (patch_level, stdout);
 
   /* set the static fileptr in save.c to the highscore file pointer */
   set_fileptr(highscore_fp);

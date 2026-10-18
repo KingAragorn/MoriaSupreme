@@ -595,6 +595,8 @@ int monptr, dam;
 	  (void) sprintf(slain, "Slew the %s.", c_list[m_ptr->mptr].name);
 	  history_add(slain);
 	}
+      if (m_ptr->mptr == MON_PALE_RIDDLER && riddler_state < 2)
+	riddler_state = 3;
       i = monster_death((int)m_ptr->fy, (int)m_ptr->fx,
 			c_list[m_ptr->mptr].cmove);
       if ((py.flags.blind < 1 && m_ptr->ml)

@@ -1699,7 +1699,17 @@ int attack;
 			  }
 		      }
 		    if ((m_ptr->csleep == 0) && (m_ptr->stunned == 0))
-		      mon_move (i, &rcmove);
+		      {
+			/* FALSE means it stiffened, or it is already gone. */
+			if (!hobbit_before_move(i) && m_ptr->hp < 0)
+			  {
+			    k = 0;
+			    break;
+			  }
+			if (m_ptr->hp >= 0 && m_ptr->csleep == 0
+			    && m_ptr->stunned == 0)
+			  mon_move(i, &rcmove);
+		      }
 		  }
 
 		update_mon(i);

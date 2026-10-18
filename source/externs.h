@@ -120,6 +120,7 @@ extern int8u town_patron;	/* PATRON_* , 0 if undedicated */
 extern int32 bank_gold;
 extern town_quest_type town_quests[TOWN_QUESTS];
 extern int8u personality;	/* PERS_* , patch 2 trailer */
+extern int8u riddler_state;	/* 0 not met, 1 failed, 2 paid, 3 slain */
 extern int8u locker_ctr;
 extern inven_type locker[LOCKER_SLOTS];
 extern int8u birth_rand_ego;	/* patch 3: reshuffle ego bonuses */
@@ -656,6 +657,11 @@ int town_grove_offer(void);
 void town_cast_grove(void);
 int town_sneak_p(void);
 
+/* hobbit.c */
+void hobbit_dress_level(void);
+void hobbit_after_turn(void);
+int hobbit_before_move(int);
+
 /* treasur1.c */
 
 /* treasur2.c */
@@ -1141,6 +1147,11 @@ void town_bard_played();
 int town_grove_offer();
 void town_cast_grove();
 int town_sneak_p();
+
+/* hobbit.c */
+void hobbit_dress_level();
+void hobbit_after_turn();
+int hobbit_before_move();
 
 /* treasur1.c */
 

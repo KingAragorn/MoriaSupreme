@@ -27,20 +27,13 @@ Constant.h should always be included after config.h, because it uses
 some of the system defines set up there.
 #endif
 
-/* Current version number of Moria				*/
-#define CUR_VERSION_MAJ 0 /* version 0.9 */
-#define CUR_VERSION_MIN 9
-/* Patch 1 appends a trailer after birth_date (patron, bank, second spell
-   mask, two town jobs). Patch 2 appends a temperament byte and a bank
-   locker after that. Patch 3 appends birth-challenge flags, an ego-item
-   seed, and the character history. The bytes before each trailer stay
-   put. A patch 0, 1, or 2 save still loads: empty history, every
-   challenge off. */
-#define PATCH_LEVEL 3
+/* Current version number of Moria Supreme. Saves and scores from any
+   other version, including Pmoria and earlier Moria Supreme, are refused. */
+#define CUR_VERSION_MAJ 1
+#define CUR_VERSION_MIN 0
 
-/* Birth challenges. The same bits are stored in the patch 3 trailer and
-   in the high nibble of a score record's class byte, so the 73-byte
-   score record does not grow and an older score file still lines up. */
+/* Birth challenges. The same bits are stored in the save and in the high
+   nibble of a score record's class byte. */
 #define CHAL_EGO		0x01 /* randomized ego items */
 #define CHAL_IRON		0x02 /* no up stairs, no recall to town */
 #define CHAL_SELL		0x04 /* shops do not buy; floor gold is doubled */
@@ -107,7 +100,7 @@ some of the system defines set up there.
 /* Note that the following constants are all related, if you change one,
    you must also change all succeeding ones.  Also, player_init[] and
    store_choice[] may also have to be changed. */
-#define MAX_OBJECTS    440    /* Number of objects for universe	       */
+#define MAX_OBJECTS    441    /* Number of objects for universe	       */
 #define MAX_DUNGEON_OBJ 351   /* Number of dungeon objects */
 #define OBJ_OPEN_DOOR	374
 #define OBJ_CLOSED_DOOR 375
@@ -123,6 +116,9 @@ some of the system defines set up there.
 #define OBJ_NOTHING	424
 #define OBJ_RUINED_CHEST 425
 #define OBJ_WIZARD      426
+/* Appended. A ring of invisibility, dropped by the riddle encounter.
+   subval 31 is its own. Not in the random dungeon table. */
+#define OBJ_RING_INVIS  440
 /* Town services and gear appended after the Pmoria list. Do not insert
    earlier: inventory stores these indexes. */
 #define OBJ_HALL_DOOR   427
@@ -167,7 +163,19 @@ some of the system defines set up there.
 #define OBJ_RUNE_PROT	 3000 /* Rune of protection resistance	       */
 
 /* Creature constants						*/
-#define MAX_CREATURES	  299 /* Number of creatures defined for univ  */
+#define MAX_CREATURES	  303 /* Number of creatures defined for univ  */
+/* Indexes below this are the patch-2 creature table, including two
+   unused level-0 slots the old allocator still counts. Creatures from
+   this index on are placed by hand and are not part of that index math,
+   so an old save still points at the same monsters. */
+#define MON_TABLE_END	  297
+/* Hand-placed. Indexes follow the two unused slots after the Balrog. */
+#define MON_GOBLIN	  297
+#define MON_GOBLIN_CAPTAIN 298
+#define MON_WARG	  299
+#define MON_WOOD_SPIDER	  300
+#define MON_STONE_TROLL	  301
+#define MON_PALE_RIDDLER  302
 #define N_MONS_ATTS	  248 /* Number of monster attack types.	*/
 /* with MAX_MALLOC 101, it is possible to get compacting monsters messages
    while breeding/cloning monsters */
@@ -209,10 +217,7 @@ some of the system defines set up there.
 #define MAX_EXP	    9999999L  /* Maximum amount of experience -CJS- */
 
 
-/* Race and class ids are stored in the save file as bytes. New ids are
-   appended, so a Pmoria 0.98 save still names the same race and class.
-   Patch 0 saves (no trailer) still load. Patch 1 writes the same prefix
-   and then the town trailer; see the note by PATCH_LEVEL. */
+/* Race and class ids are stored in the save file as bytes. */
 #define MAX_RACES	 12   /* Number of defined races	       */
 #define MAX_CLASS	 16   /* Number of defined classes	       */
 
@@ -233,22 +238,21 @@ some of the system defines set up there.
 #define CLASS_BARD		14
 #define CLASS_ADVENTURER	15
 
-/* Town patrons. Stored as one byte in the patch 1 trailer. 0 is none. */
+/* Town patrons. 0 is none. */
 #define PATRON_NONE		0
 #define PATRON_FORGE		1
 #define PATRON_WILD		2
 #define PATRON_MERCY		3
 #define PATRON_DEEP		4
 
-/* Notice-board jobs. Two of them, also in the trailer. */
+/* Notice-board jobs. Two of them. */
 #define QUEST_NONE		0
 #define QUEST_KILL		1
 #define QUEST_FETCH		2
 #define QUEST_WANTED		3
 #define TOWN_QUESTS		2
 
-/* Temperament chosen at birth. One byte in the patch 2 trailer.
-   0 is Ordinary, which is what a patch 0 or patch 1 save loads as. */
+/* Temperament chosen at birth. 0 is Ordinary. */
 #define PERS_ORDINARY		0
 #define PERS_MIGHTY		1
 #define PERS_SHREWD		2
@@ -528,6 +532,9 @@ some of the system defines set up there.
 #define CD_NO_SLEEP	0x1000
 #define CD_INFRA	0x2000
 #define CD_MAX_HP	0x4000
+/* 0x0400 and 0x0800 used to be spare. They are not part of CD_WEAKNESS. */
+#define CD_ORC		0x0400	/* orc-kin; a warning blade notices them */
+#define CD_LIGHTBANE	0x0800	/* stiffens and cracks in light or daylight */
 
 /* inventory stacking subvals */
 /* these never stack */
@@ -617,7 +624,8 @@ some of the system defines set up there.
 #define SN_DISARMED		54
 #define SN_UNLOCKED		55
 #define SN_SLAY_ANIMAL		56
-#define SN_ARRAY_SIZE		57 /* must be at end of this list */
+#define SN_ORC_WARNING		57
+#define SN_ARRAY_SIZE		58 /* must be at end of this list */
 
 /* defines for treasure type values (tval) */
 #define TV_NEVER	-1 /* used by find_range() for non-search */

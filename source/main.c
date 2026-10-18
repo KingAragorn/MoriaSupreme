@@ -396,7 +396,8 @@ static void init_m_level()
   for (i = 0; i <= MAX_MONS_LEVEL; i++)
     m_level[i] = 0;
 
-  k = MAX_CREATURES - WIN_MON_TOT;
+  /* Stop at the original table. Appended creatures are placed by hand. */
+  k = MON_TABLE_END;
   for (i = 0; i < k; i++)
     m_level[c_list[i].level]++;
 

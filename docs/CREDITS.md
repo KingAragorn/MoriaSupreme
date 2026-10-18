@@ -22,6 +22,8 @@ The temperament, wanted notices, item feelings, bank locker, armor reading, junk
 
 The character history, randomized ego items, ironman stairs, no selling, and connected stairs were written from public descriptions of the Angband family. No Angband source was opened. Classic Moria has no named-artifact list, so none was added: the birth option only reshuffles the ego items this game already has, (HA), (DF), of Slay X, and the rest. No artifact table, unique-monster list, or item text was copied. The history sentences and the bonus shifts are original to this game.
 
+The goblins, warg, wood spider, stone troll, pale riddler, ring of invisibility, halfling burglar's touch, orc-warning blade, and dragon hoard were written from public memory of a hobbit tale. No sentence from that book was copied. The riddles, names, and numbers are original. There is no list of named artifacts.
+
 The project will never be sold.
 
 The DOS, Atari ST, Amiga, Mac Classic, VMS, and IBM PC sources are no longer in this tree. The people who wrote those ports are still named in `files/version.hlp` and in James Wilson's `readme`.
