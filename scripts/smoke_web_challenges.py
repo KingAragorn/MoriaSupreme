@@ -112,9 +112,11 @@ def main():
             page.wait_for_timeout(200)
         else:
             raise SystemExit("web save did not finish\n" + screen(page))
-        page.close()
-
-        page = open_page(browser, BASE)
+        # A new page drops the browser save. Reloading this page keeps it.
+        page.goto(BASE, wait_until="domcontentloaded")
+        page.click("#screen")
+        if not wait_text(page, "Press any key", 40):
+            raise SystemExit("reload news missing\n" + screen(page))
         push(page, " ")
         text = wait_text(page, "Webfour", 25)
         if not text:

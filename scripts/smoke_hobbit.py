@@ -78,6 +78,14 @@ def birth_halfling(game, shots=None):
     if not game.wait_for("temperament"):
         return False, "temperament prompt missing"
     game.send("a")
+    game.pump(0.15)
+    if "-more-" in game.text():
+        game.send(" ")
+    for prompt in ("Randomized ego", "Ironman stairs", "No selling",
+                   "Connected stairs"):
+        if not game.wait_for(prompt):
+            return False, prompt + " prompt missing"
+        game.send("n")
     if not game.wait_for("player's name"):
         return False, "name prompt missing"
     game.send("\r")
