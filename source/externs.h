@@ -122,6 +122,17 @@ extern town_quest_type town_quests[TOWN_QUESTS];
 extern int8u personality;	/* PERS_* , patch 2 trailer */
 extern int8u locker_ctr;
 extern inven_type locker[LOCKER_SLOTS];
+extern int8u birth_rand_ego;	/* patch 3: reshuffle ego bonuses */
+extern int8u birth_ironman;	/* no up stairs, no recall to town */
+extern int8u birth_no_sell;	/* shops do not buy */
+extern int8u birth_connected;	/* stairs remember where you came from */
+extern int32 ego_seed;
+extern int8u history_ego;	/* first ego item already noted */
+extern int16 history_ctr;
+extern history_record history_log[HISTORY_MAX];
+extern int8u stair_link;	/* 1 place an up stair, 2 place a down stair */
+extern int8u stair_y;
+extern int8u stair_x;
 extern int8u spell_order[32];	/* remember order that spells are learned in */
 extern int16u player_init[MAX_CLASS][5];
 extern int16 total_winner;
@@ -322,6 +333,7 @@ int m_bonus(int, int, int);
 
 /* misc2.c */
 void magic_treasure(int, int);
+void ego_prepare(void);
 void set_options(void);
 
 /* misc3.c */
@@ -632,6 +644,11 @@ void town_try_hidden(void);
 void town_temple_notice(void);
 void town_dedicate(void);
 void town_note_kill(int);
+void history_add(char *);
+void history_show(int);
+void note_first_ego(struct inven_type *);
+int challenge_flags(void);
+char *challenge_text(void);
 int town_bard_fail(void);
 char *personality_name(int);
 void town_bard_played(void);
@@ -803,6 +820,7 @@ int m_bonus();
 
 /* misc2.c */
 void magic_treasure();
+void ego_prepare();
 void set_options();
 
 /* misc3.c */
@@ -1112,6 +1130,11 @@ void town_try_hidden();
 void town_temple_notice();
 void town_dedicate();
 void town_note_kill();
+void history_add();
+void history_show();
+void note_first_ego();
+int challenge_flags();
+char *challenge_text();
 int town_bard_fail();
 char *personality_name();
 void town_bard_played();

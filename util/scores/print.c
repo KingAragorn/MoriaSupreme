@@ -114,11 +114,43 @@ main(argc, argv)
       /* Put twenty scores on each page, on lines 2 through 21. */
       while (!feof(highscore_fp) && i < 21)
 	{
-	  (void) sprintf(string,
-			 "%-4d%8ld %-19.19s %c %-10.10s %-7.7s%3d %-22.22s\n",
-			 rank, score.points, score.name, score.sex,
-			 race[score.race].trace, class[score.class].title,
-			 score.lev, score.died_from);
+	  {
+	    int cls, chal, n, room;
+	    char tag[6], how[28];
+	    char *ctitle;
+
+	    cls = (int)(score.class & 0x0F);
+	    chal = (int)(score.class >> 4);
+	    if (score.race < MAX_RACES && cls < MAX_CLASS)
+	      ctitle = class[cls].title;
+	    else
+	      ctitle = "?";
+	    n = 0;
+	    if (chal & CHAL_IRON)
+	      tag[n++] = 'I';
+	    if (chal & CHAL_SELL)
+	      tag[n++] = 'N';
+	    if (chal & CHAL_STAIR)
+	      tag[n++] = 'C';
+	    if (chal & CHAL_EGO)
+	      tag[n++] = 'E';
+	    tag[n] = '\0';
+	    score.died_from[24] = '\0';
+	    if (n == 0)
+	      (void) sprintf(how, "%-.22s", score.died_from);
+	    else
+	      {
+		room = 21 - n;
+		if (room < 1)
+		  room = 1;
+		(void) sprintf(how, "%-.*s %s", room, score.died_from, tag);
+	      }
+	    (void) sprintf(string,
+			   "%-4d%8ld %-19.19s %c %-10.10s %-7.7s%3d %-22.22s\n",
+			   rank, score.points, score.name, score.sex,
+			   race[score.race < MAX_RACES ? score.race : 0].trace,
+			   ctitle, score.lev, how);
+	  }
 	  printf (string, ++i);
 	  rank++;
 	  rd_highscore(&score);

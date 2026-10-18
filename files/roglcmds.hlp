@@ -19,6 +19,7 @@ Command summary: (@ is optional count, ~ is direction, ^R redraws, ESC aborts)
   /       Identify a character.     |   >       Go down a down-staircase.
 @ CTRL-P  Previous message review   |   {       Inscribe an object.
   }       Destroy items marked junk |   ]       Spectre draws a charge
+  A       Character history.        |
 @ -  ~    Move without pickup.      |   ?       Type this page.
 @ CTRL  ~ Tunnel in a direction.    |   CTRL-X  Save character and exit.
 @ SHIFT ~ Run in direction.         | @ ~       For movement.

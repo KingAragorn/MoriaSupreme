@@ -48,6 +48,7 @@ static void build_tunnel(int, int, int, int);
 static int next_to(int, int);
 static void try_door(int, int);
 static void new_spot(int16 *, int16 *);
+static void place_player(void);
 static void cave_gen(void);
 static void build_store(int, int, int);
 static void tlink(void);
@@ -352,6 +353,10 @@ int y, x;
   register int cur_pos;
   register cave_type *cave_ptr;
 
+  /* The search that found this tile still ran, so the rest of the level
+     keeps the same random draws. The stair itself is simply not there. */
+  if (birth_ironman)
+    return;
   cave_ptr = &cave[y][x];
   if (cave_ptr->tptr != 0)
     (void) delete_object(y, x);
@@ -1222,6 +1227,37 @@ int16 *y, *x;
 }
 
 
+/* With connected stairs, come out on a stair at the tile the player
+   left. Ironman never gets an up stair back, even if the option is on.
+   Any other case is the ordinary random spot. */
+static void place_player()
+{
+  int y, x;
+
+  y = (int)stair_y;
+  x = (int)stair_x;
+  if (birth_connected && stair_link != 0
+      && !(stair_link == 1 && birth_ironman)
+      && y > 0 && x > 0 && y < cur_height - 1 && x < cur_width - 1
+      && cave[y][x].fval >= DARK_FLOOR
+      && cave[y][x].fval <= MAX_OPEN_SPACE
+      && cave[y][x].cptr == 0)
+    {
+      if (cave[y][x].tptr != 0)
+	(void) delete_object(y, x);
+      if (stair_link == 1)
+	place_up_stairs(y, x);
+      else
+	place_down_stairs(y, x);
+      char_row = (int16)y;
+      char_col = (int16)x;
+    }
+  else
+    new_spot(&char_row, &char_col);
+  stair_link = 0;
+}
+
+
 /* Cave logic flow for generation of new dungeon		*/
 static void cave_gen()
 {
@@ -1307,7 +1343,7 @@ static void cave_gen()
   place_stairs(2, randint(2)+2, 3);
   place_stairs(1, randint(2), 3);
   /* Set up the character co-ords, used by alloc_monster, place_win_monster */
-  new_spot(&char_row, &char_col);
+  place_player();
   alloc_monster((randint(8)+MIN_MALLOC_LEVEL+alloc_level), 0, TRUE);
   alloc_object(set_corr, 3, randint(alloc_level));
   alloc_object(set_room, 5, randnor(TREAS_ROOM_ALLOC, 3));
@@ -1406,7 +1442,7 @@ static void town_gen()
   place_stairs(2, 1, 0);
   reset_seed();
   /* Set up the character co-ords, used by alloc_monster below */
-  new_spot(&char_row, &char_col);
+  place_player();
   if (0x1 & (turn / 5000))
     {		/* Night	*/
       for (i = 0; i < cur_height; i++)

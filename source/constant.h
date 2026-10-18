@@ -32,9 +32,19 @@ some of the system defines set up there.
 #define CUR_VERSION_MIN 9
 /* Patch 1 appends a trailer after birth_date (patron, bank, second spell
    mask, two town jobs). Patch 2 appends a temperament byte and a bank
-   locker after that. The bytes before each trailer stay put, and a
-   patch 0 or patch 1 save still loads. */
-#define PATCH_LEVEL 2
+   locker after that. Patch 3 appends birth-challenge flags, an ego-item
+   seed, and the character history. The bytes before each trailer stay
+   put. A patch 0, 1, or 2 save still loads: empty history, every
+   challenge off. */
+#define PATCH_LEVEL 3
+
+/* Birth challenges. The same bits are stored in the patch 3 trailer and
+   in the high nibble of a score record's class byte, so the 73-byte
+   score record does not grow and an older score file still lines up. */
+#define CHAL_EGO		0x01 /* randomized ego items */
+#define CHAL_IRON		0x02 /* no up stairs, no recall to town */
+#define CHAL_SELL		0x04 /* shops do not buy; floor gold is doubled */
+#define CHAL_STAIR		0x08 /* stairs try to come out where you went in */
 
 #ifndef TRUE
 #define TRUE 1

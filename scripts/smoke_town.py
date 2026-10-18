@@ -70,6 +70,14 @@ class Town(Session):
                 return
 
 
+CHALLENGE_WORDS = (
+    "randomized egos",
+    "ironman stairs",
+    "no selling",
+    "connected stairs",
+)
+
+
 TEMPERAMENT_NAMES = {
     "a": "Ordinary",
     "b": "Mighty",
@@ -80,7 +88,16 @@ TEMPERAMENT_NAMES = {
 }
 
 
-def create(session, race_letter, class_letter, name, temperament="a", shots=None, shot_name=None):
+def answer_challenges(session, answers="nnnn"):
+    prompts = ("Randomized ego", "Ironman stairs", "No selling", "Connected stairs")
+    for prompt, ans in zip(prompts, answers):
+        if not session.wait_for(prompt):
+            return prompt + " prompt missing\n" + session.text()
+        session.send(ans)
+    return None
+
+
+def create(session, race_letter, class_letter, name, temperament="a", shots=None, shot_name=None, challenges="nnnn"):
     if not session.wait_for("Press any key to continue", 12):
         return "news missing\n" + session.text()
     session.send(" ")
@@ -99,6 +116,9 @@ def create(session, race_letter, class_letter, name, temperament="a", shots=None
     if not session.wait_for("temperament"):
         return "temperament prompt missing\n" + session.text()
     session.send(temperament)
+    err = answer_challenges(session, challenges)
+    if err:
+        return err
     if not session.wait_for("player's name"):
         return "name prompt missing\n" + session.text()
     session.send(name + "\r")
@@ -106,8 +126,18 @@ def create(session, race_letter, class_letter, name, temperament="a", shots=None
         return "sheet missing\n" + session.text()
     expected = TEMPERAMENT_NAMES.get(temperament, "Ordinary")
     lines = session.text().splitlines()
-    if len(lines) < 7 or expected not in lines[6]:
+    if len(lines) < 9 or expected not in lines[6]:
         return "sheet temperament is not %s\n%s" % (expected, session.text())
+    sheet_chal = lines[8]
+    if challenges == "nnnn":
+        if "none" not in sheet_chal:
+            return "sheet challenges are not off\n" + session.text()
+    else:
+        for bit, word in zip(challenges, CHALLENGE_WORDS):
+            if bit == "y" and word not in sheet_chal:
+                return "sheet missing %s\n%s" % (word, session.text())
+            if bit != "y" and word in sheet_chal:
+                return "sheet unexpectedly has %s\n%s" % (word, session.text())
     if shots is not None and shot_name:
         shots[shot_name] = clone_screen(session.screen)
     session.send(" ")

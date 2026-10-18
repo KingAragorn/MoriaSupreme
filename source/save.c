@@ -68,6 +68,8 @@ static void wr_town_life(void);
 static void rd_town_life(void);
 static void wr_patch2(void);
 static int rd_patch2(void);
+static void wr_patch3(void);
+static int rd_patch3(void);
 #else
 static int sv_write();
 static void wr_byte();
@@ -90,6 +92,8 @@ static void wr_town_life();
 static void rd_town_life();
 static void wr_patch2();
 static int rd_patch2();
+static void wr_patch3();
+static int rd_patch3();
 #endif
 
 #ifndef MORIA_POSIX
@@ -332,10 +336,11 @@ static int sv_write()
   /* starting with 5.2.2, put the birth_date in the savefile */
   wr_long ((int32u) birth_date);
 
-  /* Patch 1 trailer, then the patch 2 trailer. Older readers stop at
-     birth_date, so both are appended and never inserted into the prefix. */
+  /* Patch 1, then patch 2, then patch 3. Older readers stop at birth_date,
+     so each trailer is appended and never inserted into the prefix. */
   wr_town_life();
   wr_patch2();
+  wr_patch3();
 
   /* only level specific info follows, this allows characters to be
      resurrected, the dungeon level info is not needed for a resurrection */
@@ -881,6 +886,12 @@ int *generate;
 	  if (!rd_patch2())
 	    goto error;
 	}
+      if (version_maj == CUR_VERSION_MAJ && version_min == CUR_VERSION_MIN
+	  && patch_level >= 3)
+	{
+	  if (!rd_patch3())
+	    goto error;
+	}
       if ((c = getc(fileptr)) == EOF || (l & 0x80000000L))
 	{
 	  if ((l & 0x80000000L) == 0)
@@ -1213,6 +1224,72 @@ static int rd_patch2()
       rd_item(&locker[i]);
       if (locker[i].index >= MAX_OBJECTS || locker[i].tval == TV_NOTHING)
 	return FALSE;
+    }
+  return TRUE;
+}
+
+/* Challenge flags, the ego seed, and the history log. A missing trailer
+   leaves the flags off and the log empty, which town_clear already did. */
+static void wr_patch3()
+{
+  int i;
+
+  wr_byte((int8u)challenge_flags());
+  wr_long((int32u)ego_seed);
+  wr_byte(history_ego);
+  wr_short((int16u)history_ctr);
+  for (i = 0; i < (int)history_ctr; i++)
+    {
+      wr_long((int32u)history_log[i].turn);
+      wr_short((int16u)history_log[i].depth);
+      wr_string(history_log[i].note);
+    }
+}
+
+static int rd_patch3()
+{
+  int i;
+  int8u flags;
+  int16u n;
+  int32u l;
+  bigvtype note;
+
+  rd_byte(&flags);
+  birth_rand_ego = (flags & CHAL_EGO) ? 1 : 0;
+  birth_ironman = (flags & CHAL_IRON) ? 1 : 0;
+  birth_no_sell = (flags & CHAL_SELL) ? 1 : 0;
+  birth_connected = (flags & CHAL_STAIR) ? 1 : 0;
+  rd_long(&l);
+  ego_seed = (int32)l;
+  rd_byte(&history_ego);
+  if (history_ego > 1)
+    history_ego = 1;
+  rd_short(&n);
+  if (n > HISTORY_MAX)
+    return FALSE;
+  history_ctr = (int16)n;
+  for (i = 0; i < (int)n; i++)
+    {
+      rd_long(&l);
+      history_log[i].turn = (int32)l;
+      rd_short((int16u *)&history_log[i].depth);
+      rd_string(note);
+      note[HISTORY_NOTE - 1] = '\0';
+      {
+	int k;
+	for (k = 0; k < HISTORY_NOTE; k++)
+	  {
+	    history_log[i].note[k] = note[k];
+	    if (note[k] == '\0')
+	      break;
+	  }
+      }
+    }
+  if (birth_rand_ego)
+    {
+      if (ego_seed == 0)
+	ego_seed = 1;
+      ego_prepare();
     }
   return TRUE;
 }

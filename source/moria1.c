@@ -1808,7 +1808,15 @@ char *hit_from;
           py.misc.mana*=4;
           py.misc.mana/=5;
           py.misc.cmana=py.misc.mana; /* Lose mana too, dude */
-          py.flags.word_recall=1; /* Back at surface */
+          /* Ironman blocks a recall scroll. Resurrection still
+             returns to town by setting the depth directly. */
+          if (birth_ironman)
+            {
+              py.flags.word_recall = 0;
+              dun_level = 0;
+            }
+          else
+            py.flags.word_recall=1; /* Back at surface */
           (void) lose_exp(py.misc.exp/5); /* Lose 20% of XP */
           py.misc.max_exp=py.misc.exp;
        }

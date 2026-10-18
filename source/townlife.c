@@ -22,6 +22,17 @@ town_quest_type town_quests[TOWN_QUESTS];
 int8u personality = PERS_ORDINARY;
 int8u locker_ctr = 0;
 inven_type locker[LOCKER_SLOTS];
+int8u birth_rand_ego = 0;
+int8u birth_ironman = 0;
+int8u birth_no_sell = 0;
+int8u birth_connected = 0;
+int32 ego_seed = 0;
+int8u history_ego = 0;
+int16 history_ctr = 0;
+history_record history_log[HISTORY_MAX];
+int8u stair_link = 0;
+int8u stair_y = 0;
+int8u stair_x = 0;
 
 static spell_type druid_arcane[8] = {
   { 1, 1, 30,  1},
@@ -121,6 +132,18 @@ void town_clear()
   spell_worked2 = 0;
   personality = PERS_ORDINARY;
   locker_ctr = 0;
+  birth_rand_ego = 0;
+  birth_ironman = 0;
+  birth_no_sell = 0;
+  birth_connected = 0;
+  ego_seed = 0;
+  history_ego = 0;
+  history_ctr = 0;
+  stair_link = 0;
+  stair_y = 0;
+  stair_x = 0;
+  for (i = 0; i < HISTORY_MAX; i++)
+    history_log[i].note[0] = '\0';
   for (i = 0; i < LOCKER_SLOTS; i++)
     invcopy(&locker[i], OBJ_NOTHING);
   for (i = 0; i < TOWN_QUESTS; i++)
@@ -898,6 +921,12 @@ town_quest_type *q;
   (void) sprintf(out, "The board pays you %ld gold.", (long)gold);
   msg_print(out);
   prt_experience();
+  if (q->kind == QUEST_WANTED)
+    history_add("Finished a wanted notice.");
+  else if (q->kind == QUEST_KILL)
+    history_add("Finished a kill job.");
+  else
+    history_add("Finished a fetch job.");
   q->kind = QUEST_NONE;
   fill_quests();
 }
@@ -1054,6 +1083,8 @@ void town_dedicate()
   calc_bonuses();
   (void) sprintf(out, "You are dedicated to %s.", patron_name[which]);
   msg_print(out);
+  (void) sprintf(out, "Dedicated to %s.", patron_name[which]);
+  history_add(out);
 }
 
 int town_bard_fail()
@@ -1301,7 +1332,182 @@ void town_cast_grove()
 	  py.misc.cmana_frac = 0;
 	}
       else
-	py.misc.cmana -= s_ptr->smana;
+      py.misc.cmana -= s_ptr->smana;
       prt_cmana();
     }
+}
+
+/* The history is a short log of big moments. Notes are written here, not
+   copied from another game. A full log drops the oldest line. */
+void history_add(text)
+char *text;
+{
+  int i, n;
+  history_record *h;
+
+  if (text == CNIL || text[0] == '\0')
+    return;
+  if (history_ctr >= HISTORY_MAX)
+    {
+      for (i = 1; i < HISTORY_MAX; i++)
+	history_log[i - 1] = history_log[i];
+      history_ctr = HISTORY_MAX - 1;
+    }
+  h = &history_log[history_ctr];
+  h->turn = turn;
+  h->depth = (int16)dun_level;
+  n = 0;
+  while (text[n] != '\0' && n < HISTORY_NOTE - 1)
+    {
+      h->note[n] = text[n];
+      n++;
+    }
+  h->note[n] = '\0';
+  history_ctr++;
+}
+
+/* Classic Moria has no named artifact list. An ego item is a wearable
+   with one of the special names (HA), (DF), of Slay X, and the rest. */
+void note_first_ego(i_ptr)
+inven_type *i_ptr;
+{
+  int n;
+
+  if (history_ego)
+    return;
+  n = (int)i_ptr->name2;
+  if (n <= SN_NULL || n >= SN_ARRAY_SIZE)
+    return;
+  if (n >= SN_EMPTY && n <= SN_UNLOCKED)
+    return;
+  history_ego = 1;
+  history_add("Found a first ego item.");
+}
+
+int challenge_flags()
+{
+  int f;
+
+  f = 0;
+  if (birth_rand_ego)
+    f |= CHAL_EGO;
+  if (birth_ironman)
+    f |= CHAL_IRON;
+  if (birth_no_sell)
+    f |= CHAL_SELL;
+  if (birth_connected)
+    f |= CHAL_STAIR;
+  return f;
+}
+
+static void append_piece(buf, piece, any)
+char *buf;
+char *piece;
+int *any;
+{
+  char *d;
+
+  d = buf;
+  while (*d != '\0')
+    d++;
+  if (*any)
+    {
+      if (d - buf < 76)
+	{
+	  *d++ = ',';
+	  *d++ = ' ';
+	}
+    }
+  while (*piece != '\0' && (d - buf) < 78)
+    *d++ = *piece++;
+  *d = '\0';
+  *any = 1;
+}
+
+char *challenge_text()
+{
+  static char buf[80];
+  int any;
+
+  buf[0] = '\0';
+  any = 0;
+  if (birth_ironman)
+    append_piece(buf, "ironman stairs", &any);
+  if (birth_no_sell)
+    append_piece(buf, "no selling", &any);
+  if (birth_connected)
+    append_piece(buf, "connected stairs", &any);
+  if (birth_rand_ego)
+    append_piece(buf, "randomized egos", &any);
+  if (!any)
+    {
+      buf[0] = 'n';
+      buf[1] = 'o';
+      buf[2] = 'n';
+      buf[3] = 'e';
+      buf[4] = '\0';
+    }
+  return buf;
+}
+
+/* for_death draws over the screen and leaves it there. Otherwise the
+   dungeon screen is put back when the player is done reading. */
+void history_show(for_death)
+int for_death;
+{
+  int i, line, top, d;
+  char buf[82], where[8];
+
+  if (history_ctr <= 0 && !for_death)
+    {
+      msg_print("No history has been written yet.");
+      return;
+    }
+  if (!for_death)
+    save_screen();
+  top = 0;
+  do
+    {
+      clear_screen();
+      prt("Character history", 0, 30);
+      if (history_ctr <= 0)
+	{
+	  prt("No history was written.", 2, 2);
+	  prt("[Press any key]", 23, 30);
+	  (void) inkey();
+	  break;
+	}
+      line = 2;
+      for (i = top; i < (int)history_ctr && line < 22; i++)
+	{
+	  d = (int)history_log[i].depth;
+	  if (d <= 0)
+	    {
+	      where[0] = 't';
+	      where[1] = 'o';
+	      where[2] = 'w';
+	      where[3] = 'n';
+	      where[4] = '\0';
+	    }
+	  else
+	    (void) sprintf(where, "%d", d);
+	  (void) sprintf(buf, "%6ld  %-5s  %.60s",
+			 (long)history_log[i].turn, where, history_log[i].note);
+	  prt(buf, line, 1);
+	  line++;
+	}
+      if (i < (int)history_ctr)
+	prt("-- more --", 23, 32);
+      else
+	prt("[Press any key]", 23, 30);
+      if (inkey() == ESCAPE)
+	break;
+      if (i < (int)history_ctr)
+	top = i;
+      else
+	break;
+    }
+  while (TRUE);
+  if (!for_death)
+    restore_screen();
 }

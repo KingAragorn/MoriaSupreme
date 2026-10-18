@@ -12,6 +12,110 @@
 #include "types.h"
 #include "externs.h"
 
+/* Ego names and flag sets stay the ones Moria already has. When the birth
+   option is on, a private stream from ego_seed shuffles which of those
+   results a die roll picks (only where several results share the die) and
+   moves each ego's combat numbers by at most one. The dungeon RNG is
+   still randint(), so an ordinary character generates the same items. */
+static int8u ego_map[17][17];
+static int16 ego_hit[SN_ARRAY_SIZE];
+static int16 ego_dam[SN_ARRAY_SIZE];
+static int16 ego_ac[SN_ARRAY_SIZE];
+static int16 ego_p1[SN_ARRAY_SIZE];
+
+static int32u ego_lcg(state)
+int32u *state;
+{
+  *state = *state * 1103515245u + 12345u;
+  return (*state >> 16) & 0x7fffu;
+}
+
+void ego_prepare()
+{
+  int n, i, j, tmp;
+  int32u state;
+
+  if (!birth_rand_ego || ego_seed == 0)
+    return;
+  state = (int32u)ego_seed;
+  for (n = 2; n <= 16; n++)
+    {
+      for (i = 1; i <= n; i++)
+	ego_map[n][i] = (int8u)i;
+      for (i = n; i > 1; i--)
+	{
+	  j = (int)(ego_lcg(&state) % (int32u)i) + 1;
+	  tmp = (int)ego_map[n][i];
+	  ego_map[n][i] = ego_map[n][j];
+	  ego_map[n][j] = (int8u)tmp;
+	}
+    }
+  for (i = 0; i < SN_ARRAY_SIZE; i++)
+    {
+      ego_hit[i] = (int16)(ego_lcg(&state) % 3) - 1;
+      ego_dam[i] = (int16)(ego_lcg(&state) % 3) - 1;
+      ego_ac[i] = (int16)(ego_lcg(&state) % 3) - 1;
+      ego_p1[i] = (int16)(ego_lcg(&state) % 3) - 1;
+    }
+}
+
+static int ego_die(n)
+int n;
+{
+  int r;
+
+  r = randint(n);
+  if (birth_rand_ego && ego_seed != 0 && n >= 2 && n <= 16)
+    return (int)ego_map[n][r];
+  return r;
+}
+
+/* Keep a bonus from crossing zero. A positive p1 stays at least 1. */
+static int16 ego_nudge(value, delta)
+int16 value;
+int delta;
+{
+  int v;
+
+  v = (int)value + delta;
+  if (value > 0 && v < 1)
+    v = 1;
+  else if (value >= 0 && v < 0)
+    v = 0;
+  else if (value < 0 && v > -1)
+    v = -1;
+  return (int16)v;
+}
+
+static void ego_tune(t_ptr)
+inven_type *t_ptr;
+{
+  int n;
+  int16 hit, dam, ac;
+
+  if (!birth_rand_ego || ego_seed == 0)
+    return;
+  n = (int)t_ptr->name2;
+  if (n <= SN_NULL || n >= SN_ARRAY_SIZE)
+    return;
+  if (n >= SN_EMPTY && n <= SN_UNLOCKED)
+    return;
+  hit = ego_hit[n];
+  dam = ego_dam[n];
+  ac = ego_ac[n];
+  t_ptr->tohit = ego_nudge(t_ptr->tohit, (int)hit);
+  t_ptr->todam = ego_nudge(t_ptr->todam, (int)dam);
+  t_ptr->toac = ego_nudge(t_ptr->toac, (int)ac);
+  if (t_ptr->p1 != 0)
+    t_ptr->p1 = ego_nudge(t_ptr->p1, (int)ego_p1[n]);
+  if (t_ptr->cost > 0)
+    {
+      t_ptr->cost += ((long)hit + (long)dam + (long)ac) * 50L;
+      if (t_ptr->cost < 1)
+	t_ptr->cost = 1;
+    }
+}
+
 
 /* Chance of treasure having magic abilities		-RAK-	*/
 /* Chance increases with each dungeon level			 */
@@ -42,7 +146,7 @@ int x, level;
 	{
 	  t_ptr->toac += m_bonus(1, 30, level);
 	  if (magik(special))
-	    switch(randint(9))
+	    switch(ego_die(9))
 	      {
 	      case 1: case 5:
 		t_ptr->flags |= (TR_RES_LIGHT|TR_RES_COLD|TR_RES_ACID|
@@ -94,7 +198,7 @@ int x, level;
 	     before change to treasure distribution, this helps keep same
 	     number of ego weapons same as before, see also missiles */
 	  if (magik(3*special/2))
-	    switch(randint(16))
+	    switch(ego_die(16))
 	      {
 	      case 1:	/* Holy Avenger	 */
 		t_ptr->flags |= (TR_SEE_INVIS|TR_SUST_STAT|TR_SLAY_UNDEAD|
@@ -855,6 +959,7 @@ int x, level;
     default:
       break;
     }
+  ego_tune(t_ptr);
 }
 
 

@@ -60,6 +60,7 @@ void dungeon()
   int find_count, i;
   int regen_amount;	    /* Regenerate hp and mana*/
   char command;		/* Last command		 */
+  vtype depth_note;
   register struct misc *p_ptr;
   register inven_type *i_ptr;
   register struct flags *f_ptr;
@@ -79,7 +80,14 @@ void dungeon()
     player_light = FALSE;
   /* Check for a maximum level		   */
   if (dun_level > p_ptr->max_dlv)
-    p_ptr->max_dlv = dun_level;
+    {
+      p_ptr->max_dlv = dun_level;
+      if (dun_level > 0)
+	{
+	  (void) sprintf(depth_note, "Reached dungeon level %d.", (int)dun_level);
+	  history_add(depth_note);
+	}
+    }
 
   /* Reset flags and initialize variables  */
   command_count = 0;
@@ -599,18 +607,27 @@ void dungeon()
       if (f_ptr->word_recall > 0)
 	if (f_ptr->word_recall == 1)
 	  {
-	    new_level_flag = TRUE;
-	    f_ptr->paralysis++;
 	    f_ptr->word_recall = 0;
-	    if (dun_level > 0)
+	    stair_link = 0;
+	    /* Ironman stairs: a scroll still counts down, but it cannot
+	       drag the character back to town. Going down from town is
+	       unchanged. Resurrection sets the town depth itself. */
+	    if (dun_level > 0 && birth_ironman)
+	      msg_print("The stone will not let you rise.");
+	    else
 	      {
-		dun_level = 0;
-		msg_print("You feel yourself yanked upwards!");
-	      }
-	    else if (py.misc.max_dlv != 0)
-	      {
-		dun_level = py.misc.max_dlv;
-		msg_print("You feel yourself yanked downwards!");
+		new_level_flag = TRUE;
+		f_ptr->paralysis++;
+		if (dun_level > 0)
+		  {
+		    dun_level = 0;
+		    msg_print("You feel yourself yanked upwards!");
+		  }
+		else if (py.misc.max_dlv != 0)
+		  {
+		    dun_level = py.misc.max_dlv;
+		    msg_print("You feel yourself yanked downwards!");
+		  }
 	      }
 	  }
 	else
@@ -1294,6 +1311,10 @@ char com_val;
       restore_screen();
       free_turn_flag = TRUE;
       break;
+    case 'A':		/* (A) character history */
+      history_show(FALSE);
+      free_turn_flag = TRUE;
+      break;
     case 'D':		/* (D)isarm trap */
       disarm_trap();
       break;
@@ -1615,6 +1636,7 @@ char c;
     case '>':
     case '?':
     case 'C':
+    case 'A':
     case 'E':
     case 'F':
     case 'G':
@@ -1923,8 +1945,20 @@ static void go_up()
   if (c_ptr->tptr != 0)
     if (t_list[c_ptr->tptr].tval == TV_UP_STAIR)
       {
+	if (birth_ironman)
+	  {
+	    msg_print("The stairs will not carry you up.");
+	    free_turn_flag = TRUE;
+	    return;
+	  }
 	if (!confirm_stairs())
 	  return;
+	if (birth_connected)
+	  {
+	    stair_y = (int8u)char_row;
+	    stair_x = (int8u)char_col;
+	    stair_link = 2;
+	  }
 	dun_level--;
 	new_level_flag = TRUE;
 	msg_print("You enter a maze of up staircases.");
@@ -1955,6 +1989,12 @@ static void go_down()
       {
 	if (!confirm_stairs())
 	  return;
+	if (birth_connected)
+	  {
+	    stair_y = (int8u)char_row;
+	    stair_x = (int8u)char_col;
+	    stair_link = 1;
+	  }
 	dun_level++;
 	new_level_flag = TRUE;
 	msg_print("You enter a maze of down staircases.");

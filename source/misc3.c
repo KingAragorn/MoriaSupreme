@@ -83,6 +83,10 @@ int y, x;
   invcopy(&t_list[cur_pos], OBJ_GOLD_LIST+i);
   t_ptr = &t_list[cur_pos];
   t_ptr->cost += (8L * (long)randint((int)t_ptr->cost)) + randint(8);
+  /* No selling removes the shop as a source of gold. Piles on the floor,
+     including what a monster drops, pay twice as much to make up for it. */
+  if (birth_no_sell && t_ptr->cost > 0)
+    t_ptr->cost *= 2;
   if (cave[y][x].cptr == 1)
     msg_print ("You feel something roll beneath your feet.");
 }
@@ -932,6 +936,7 @@ void put_character()
   put_buffer ("Sex         :", 4, 1);
   put_buffer ("Class       :", 5, 1);
   put_buffer ("Temperament :", 6, 1);
+  put_buffer ("Challenges  :", 8, 1);
   if (character_generated)
     {
       put_buffer (m_ptr->name, 2, 15);
@@ -939,6 +944,7 @@ void put_character()
       put_buffer ((m_ptr->male ? "Male" : "Female"), 4, 15);
       put_buffer (class[m_ptr->pclass].title, 5, 15);
       put_buffer (personality_name((int)personality), 6, 15);
+      put_buffer (challenge_text(), 8, 15);
     }
 }
 
@@ -1977,6 +1983,8 @@ static void gain_level()
   p_ptr->lev++;
   (void) sprintf(out_val, "Welcome to level %d.", (int)p_ptr->lev);
   msg_print(out_val);
+  (void) sprintf(out_val, "Gained experience level %d.", (int)p_ptr->lev);
+  history_add(out_val);
   calc_hitpoints();
   calc_bonuses();
 
